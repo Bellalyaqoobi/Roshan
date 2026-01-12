@@ -1,0 +1,2639 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>سیستم مدیریت سیم کارت‌های روشن و کریدت - نسخه پیشرفته</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- کتابخانه SheetJS برای خروجی اکسل -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --roshan-red: #cc0000;
+            --roshan-dark: #990000;
+            --roshan-light: #ff3333;
+            --accent: #26a269;
+            --warning: #f5c211;
+            --success: #2ec27e;
+            --danger: #c01c28;
+            --info: #1c71d8;
+            --light: #f6f5f4;
+            --dark: #241f31;
+            --gray: #77767b;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --radius: 12px;
+            --transition: all 0.3s ease;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Vazirmatn', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            color: var(--dark);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        /* هدر با تم روشن */
+        header {
+            background: linear-gradient(135deg, var(--roshan-dark) 0%, var(--roshan-red) 100%);
+            color: white;
+            padding: 25px 30px;
+            border-radius: var(--radius);
+            margin-bottom: 30px;
+            box-shadow: var(--shadow);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        header::before {
+            content: "";
+            font-family: "Font Awesome 6 Free";
+            font-weight: 900;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 4rem;
+            opacity: 0.1;
+            color: white;
+        }
+        
+        header h1 {
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            position: relative;
+        }
+        
+        header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            max-width: 800px;
+            margin: 0 auto;
+            position: relative;
+        }
+        
+        /* نوار ابزار */
+        .toolbar {
+            background: white;
+            border-radius: var(--radius);
+            padding: 15px 25px;
+            margin-bottom: 25px;
+            box-shadow: var(--shadow);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .toolbar-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .toolbar-label {
+            font-weight: 600;
+            color: var(--roshan-dark);
+            font-size: 0.9rem;
+            white-space: nowrap;
+        }
+        
+        /* داشبورد */
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: var(--radius);
+            padding: 25px;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+            border-top: 4px solid var(--roshan-red);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--roshan-dark), var(--roshan-red));
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .card-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: white;
+            background: linear-gradient(135deg, var(--roshan-red), var(--roshan-light));
+        }
+        
+        .card-value {
+            font-size: 2.2rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: var(--dark);
+        }
+        
+        .card-label {
+            color: var(--gray);
+            font-size: 0.95rem;
+        }
+        
+        .card-info {
+            margin-top: 15px;
+            font-size: 0.9rem;
+        }
+        
+        .card-info p {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            padding-bottom: 5px;
+            border-bottom: 1px dashed #eee;
+        }
+        
+        .highlight {
+            color: var(--roshan-red);
+            font-weight: bold;
+        }
+        
+        .afghani {
+            color: var(--roshan-dark);
+            font-weight: bold;
+        }
+        
+        .afghani::after {
+            content: " افغانی";
+            font-size: 0.9em;
+            margin-right: 3px;
+        }
+        
+        /* ویجت‌های آماری */
+        .stats-widget {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .widget {
+            background: white;
+            padding: 20px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: var(--transition);
+        }
+        
+        .widget:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .widget-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            color: white;
+            flex-shrink: 0;
+            background: linear-gradient(135deg, var(--roshan-red), var(--roshan-light));
+        }
+        
+        .widget-info h4 {
+            font-size: 0.9rem;
+            color: var(--gray);
+            margin-bottom: 5px;
+        }
+        
+        .widget-info .value {
+            font-size: 1.6rem;
+            font-weight: bold;
+            color: var(--roshan-dark);
+        }
+        
+        /* تب‌ها */
+        .tabs-container {
+            background: white;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            margin-bottom: 30px;
+        }
+        
+        .tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .tab {
+            padding: 18px 30px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--gray);
+            transition: var(--transition);
+            flex: 1;
+            text-align: center;
+            position: relative;
+        }
+        
+        .tab:hover {
+            background: #e9ecef;
+            color: var(--roshan-dark);
+        }
+        
+        .tab.active {
+            background: white;
+            color: var(--roshan-dark);
+            border-bottom: 3px solid var(--roshan-red);
+        }
+        
+        .tab-content {
+            display: none;
+            padding: 30px;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .section-title {
+            font-size: 1.5rem;
+            color: var(--roshan-dark);
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--roshan-red);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .section-title i {
+            color: var(--roshan-red);
+        }
+        
+        /* جداول */
+        .data-table-container {
+            overflow-x: auto;
+            border-radius: var(--radius);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 800px;
+        }
+        
+        thead {
+            background: linear-gradient(90deg, var(--roshan-dark), var(--roshan-red));
+            color: white;
+        }
+        
+        th {
+            padding: 16px 20px;
+            text-align: right;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+        
+        td {
+            padding: 16px 20px;
+            text-align: right;
+            border-bottom: 1px solid #eee;
+        }
+        
+        tbody tr {
+            transition: var(--transition);
+        }
+        
+        tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+        
+        /* وضعیت‌ها */
+        .status {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        
+        .status.active {
+            background-color: rgba(46, 194, 126, 0.15);
+            color: var(--success);
+        }
+        
+        .status.pending {
+            background-color: rgba(245, 194, 17, 0.15);
+            color: var(--warning);
+        }
+        
+        .status.inactive {
+            background-color: rgba(192, 28, 40, 0.15);
+            color: var(--danger);
+        }
+        
+        /* دکمه‌ها */
+        .action-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: var(--transition);
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+        
+        .add-btn {
+            background: linear-gradient(135deg, var(--roshan-red), var(--roshan-dark));
+            color: white;
+        }
+        
+        .add-btn:hover {
+            background: linear-gradient(135deg, var(--roshan-dark), var(--roshan-red));
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(204, 0, 0, 0.3);
+        }
+        
+        .edit-btn {
+            background-color: var(--accent);
+            color: white;
+            margin-left: 8px;
+        }
+        
+        .edit-btn:hover {
+            background-color: #1a7c4d;
+            transform: translateY(-2px);
+        }
+        
+        .delete-btn {
+            background-color: var(--danger);
+            color: white;
+        }
+        
+        .delete-btn:hover {
+            background-color: #a51c2b;
+            transform: translateY(-2px);
+        }
+        
+        .view-btn {
+            background-color: var(--warning);
+            color: var(--dark);
+            margin-left: 8px;
+        }
+        
+        .view-btn:hover {
+            background-color: #e0b310;
+            transform: translateY(-2px);
+        }
+        
+        .credit-btn {
+            background-color: var(--success);
+            color: white;
+            margin-left: 8px;
+        }
+        
+        .credit-btn:hover {
+            background-color: #218838;
+            transform: translateY(-2px);
+        }
+        
+        .print-btn {
+            background-color: var(--info);
+            color: white;
+            margin-left: 8px;
+        }
+        
+        .print-btn:hover {
+            background-color: #155bb5;
+            transform: translateY(-2px);
+        }
+        
+        .excel-btn {
+            background-color: #1d6f42;
+            color: white;
+            margin-left: 8px;
+        }
+        
+        .excel-btn:hover {
+            background-color: #155732;
+            transform: translateY(-2px);
+        }
+        
+        /* فرم‌ها */
+        .form-group {
+            margin-bottom: 22px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: var(--roshan-dark);
+            font-size: 0.95rem;
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 14px 16px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: var(--transition);
+            background: #fdfdfd;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--roshan-red);
+            box-shadow: 0 0 0 3px rgba(204, 0, 0, 0.2);
+            background: white;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 22px;
+        }
+        
+        /* مودال */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .modal-content {
+            background-color: white;
+            border-radius: var(--radius);
+            width: 90%;
+            max-width: 700px;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 35px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+            animation: slideUp 0.4s ease;
+        }
+        
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(50px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.8rem;
+            cursor: pointer;
+            color: var(--gray);
+            line-height: 1;
+            transition: var(--transition);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .close-btn:hover {
+            color: var(--danger);
+            background: rgba(192, 28, 40, 0.1);
+        }
+        
+        /* مدیریت انواع */
+        .manage-types-section {
+            margin-top: 40px;
+            background: white;
+            padding: 25px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+        }
+        
+        .types-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-top: 20px;
+        }
+        
+        .type-box {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: var(--radius);
+            border: 1px solid #e9ecef;
+        }
+        
+        .type-box h4 {
+            color: var(--roshan-dark);
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--roshan-red);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .type-items {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .type-tag {
+            background: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .type-tag .remove-type {
+            color: var(--danger);
+            cursor: pointer;
+            font-size: 0.8rem;
+            background: none;
+            border: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .type-tag .remove-type:hover {
+            background: rgba(192, 28, 40, 0.1);
+        }
+        
+        .type-input-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .type-input-group input {
+            flex: 1;
+            padding: 10px 15px;
+        }
+        
+        /* جستجو */
+        .search-box {
+            margin-bottom: 25px;
+            position: relative;
+        }
+        
+        .search-box input {
+            padding-right: 50px;
+            padding-left: 16px;
+        }
+        
+        .search-box i {
+            position: absolute;
+            right: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray);
+        }
+        
+        /* پایین صفحه */
+        footer {
+            text-align: center;
+            padding: 25px;
+            margin-top: 40px;
+            color: var(--gray);
+            font-size: 0.9rem;
+            border-top: 1px solid #dee2e6;
+            background: white;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+        }
+        
+        /* انواع تراکنش */
+        .transaction-type {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        
+        .transaction-type.send {
+            background-color: rgba(52, 152, 219, 0.15);
+            color: #3498db;
+        }
+        
+        .transaction-type.receive {
+            background-color: rgba(46, 194, 126, 0.15);
+            color: var(--success);
+        }
+        
+        .transaction-type.loan {
+            background-color: rgba(245, 194, 17, 0.15);
+            color: var(--warning);
+        }
+        
+        /* استایل‌های پرینت */
+        @media print {
+            .no-print, .toolbar, .tabs, .action-btn, .search-box, footer, .modal {
+                display: none !important;
+            }
+            
+            body, .container, .tab-content, .data-table-container, table {
+                background: white !important;
+                color: black !important;
+                box-shadow: none !important;
+                width: 100% !important;
+            }
+            
+            header {
+                background: white !important;
+                color: black !important;
+                box-shadow: none !important;
+            }
+            
+            .card, .widget {
+                break-inside: avoid;
+                border: 1px solid #ddd !important;
+                box-shadow: none !important;
+            }
+            
+            table {
+                border: 1px solid #000;
+            }
+            
+            th, td {
+                border: 1px solid #ddd !important;
+                padding: 8px !important;
+            }
+        }
+        
+        /* موبایل */
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            
+            .tabs {
+                flex-direction: column;
+            }
+            
+            .tab {
+                padding: 15px;
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            header h1 {
+                font-size: 1.8rem;
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .stats-widget {
+                grid-template-columns: 1fr;
+            }
+            
+            .toolbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .toolbar-group {
+                justify-content: center;
+                margin-bottom: 10px;
+            }
+            
+            .types-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-sim-card"></i> سیستم مدیریت سیم کارت‌های روشن و کریدت - نسخه پیشرفته</h1>
+            <p>مدیریت کامل سیم کارت‌های اپراتور روشن و ثبت کریدت‌های ارسالی و قرضی با قابلیت پرینت و خروجی اکسل</p>
+        </header>
+        
+        <!-- نوار ابزار -->
+        <div class="toolbar">
+            <div class="toolbar-group">
+                <span class="toolbar-label">ابزارهای سریع:</span>
+                <button class="action-btn print-btn" id="print-all-btn">
+                    <i class="fas fa-print"></i> پرینت همه
+                </button>
+                <button class="action-btn excel-btn" id="export-excel-btn">
+                    <i class="fas fa-file-excel"></i> خروجی اکسل
+                </button>
+                <button class="action-btn edit-btn" id="manage-types-btn">
+                    <i class="fas fa-cog"></i> مدیریت انواع
+                </button>
+            </div>
+            
+            <div class="toolbar-group">
+                <span class="toolbar-label">تاریخ: </span>
+                <span id="current-date"></span>
+            </div>
+        </div>
+        
+        <!-- داشبورد -->
+        <div class="dashboard">
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <div class="card-value" id="total-sims">۰</div>
+                        <div class="card-label">تعداد سیم کارت‌های روشن</div>
+                    </div>
+                    <div class="card-icon">
+                        <i class="fas fa-sim-card"></i>
+                    </div>
+                </div>
+                <div class="card-info">
+                    <p>سیم‌های فعال <span class="highlight" id="active-sims">۰</span></p>
+                    <p>سیم‌های غیرفعال <span class="highlight" id="inactive-sims">۰</span></p>
+                    <p>سیم‌های رزرو <span class="highlight" id="reserved-sims">۰</span></p>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <div class="card-value" id="total-customers">۰</div>
+                        <div class="card-label">مشتریان ثبت شده</div>
+                    </div>
+                    <div class="card-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                </div>
+                <div class="card-info">
+                    <p>مشتریان فعال <span class="highlight" id="active-customers">۰</span></p>
+                    <p>مشتریان دارای کریدت <span class="highlight" id="credit-customers">۰</span></p>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <div class="card-value afghani" id="total-credit">۰</div>
+                        <div class="card-label">کل کریدت‌ها (افغانی)</div>
+                    </div>
+                    <div class="card-icon">
+                        <i class="fas fa-money-bill-wave"></i>
+                    </div>
+                </div>
+                <div class="card-info">
+                    <p>کریدت ارسالی <span class="highlight afghani" id="sent-credit">۰</span></p>
+                    <p>کریدت قرضی <span class="highlight afghani" id="loan-credit">۰</span></p>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <div class="card-value afghani" id="total-balance">۰</div>
+                        <div class="card-label">تراز کل (افغانی)</div>
+                    </div>
+                    <div class="card-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                </div>
+                <div class="card-info">
+                    <p>دریافتی‌ها <span class="highlight afghani" id="total-received">۰</span></p>
+                    <p>پرداختی‌ها <span class="highlight afghani" id="total-paid">۰</span></p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ویجت‌های آماری -->
+        <div class="stats-widget">
+            <div class="widget">
+                <div class="widget-icon">
+                    <i class="fas fa-paper-plane"></i>
+                </div>
+                <div class="widget-info">
+                    <h4>کریدت ارسالی امروز</h4>
+                    <div class="value afghani" id="today-sent">۰</div>
+                </div>
+            </div>
+            
+            <div class="widget">
+                <div class="widget-icon">
+                    <i class="fas fa-hand-holding-usd"></i>
+                </div>
+                <div class="widget-info">
+                    <h4>کریدت قرضی امروز</h4>
+                    <div class="value afghani" id="today-loan">۰</div>
+                </div>
+            </div>
+            
+            <div class="widget">
+                <div class="widget-icon">
+                    <i class="fas fa-user-plus"></i>
+                </div>
+                <div class="widget-info">
+                    <h4>مشتریان جدید امروز</h4>
+                    <div class="value" id="new-customers-widget">۰ نفر</div>
+                </div>
+            </div>
+            
+            <div class="widget">
+                <div class="widget-icon">
+                    <i class="fas fa-exchange-alt"></i>
+                </div>
+                <div class="widget-info">
+                    <h4>تراکنش‌های امروز</h4>
+                    <div class="value" id="today-transactions">۰</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- تب‌ها -->
+        <div class="tabs-container">
+            <div class="tabs">
+                <button class="tab active" data-tab="sims">سیم کارت‌های روشن</button>
+                <button class="tab" data-tab="customers">مشتریان</button>
+                <button class="tab" data-tab="credit">مدیریت کریدت</button>
+                <button class="tab" data-tab="transactions">تراکنش‌ها</button>
+                <button class="tab" data-tab="reports">گزارشات</button>
+            </div>
+            
+            <!-- تب سیم کارت‌های روشن -->
+            <div class="tab-content active" id="sims">
+                <div class="section-title">
+                    <i class="fas fa-sim-card"></i> مدیریت سیم کارت‌های اپراتور روشن
+                </div>
+                
+                <div class="toolbar" style="margin-bottom: 20px; padding: 15px;">
+                    <div class="toolbar-group">
+                        <button class="action-btn print-btn print-tab-btn" data-tab="sims">
+                            <i class="fas fa-print"></i> پرینت
+                        </button>
+                        <button class="action-btn excel-btn export-tab-btn" data-tab="sims">
+                            <i class="fas fa-file-excel"></i> اکسل
+                        </button>
+                    </div>
+                    
+                    <div class="search-box" style="margin-bottom: 0; flex: 1; max-width: 400px;">
+                        <input type="text" id="search-sim" placeholder="جستجوی سیم کارت بر اساس شماره، نوع یا مشتری...">
+                        <i class="fas fa-search"></i>
+                    </div>
+                </div>
+                
+                <div class="data-table-container">
+                    <table id="sim-table">
+                        <thead>
+                            <tr>
+                                <th>شماره سیم کارت</th>
+                                <th>نوع سیم</th>
+                                <th>مشتری</th>
+                                <th>شماره مشتری</th>
+                                <th>قیمت (افغانی)</th>
+                                <th>وضعیت</th>
+                                <th>تاریخ فعال‌سازی</th>
+                                <th class="no-print">عملیات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sim-table-body">
+                            <!-- داده‌های سیم کارت‌ها اینجا لود می‌شوند -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div style="text-align: left; margin-top: 25px;" class="no-print">
+                    <button class="action-btn add-btn" id="add-sim-btn">
+                        <i class="fas fa-plus"></i> افزودن سیم کارت جدید
+                    </button>
+                </div>
+            </div>
+            
+            <!-- تب مشتریان -->
+            <div class="tab-content" id="customers">
+                <div class="section-title">
+                    <i class="fas fa-users"></i> مدیریت مشتریان
+                </div>
+                
+                <div class="toolbar" style="margin-bottom: 20px; padding: 15px;">
+                    <div class="toolbar-group">
+                        <button class="action-btn print-btn print-tab-btn" data-tab="customers">
+                            <i class="fas fa-print"></i> پرینت
+                        </button>
+                        <button class="action-btn excel-btn export-tab-btn" data-tab="customers">
+                            <i class="fas fa-file-excel"></i> اکسل
+                        </button>
+                    </div>
+                    
+                    <div class="search-box" style="margin-bottom: 0; flex: 1; max-width: 400px;">
+                        <input type="text" id="search-customer" placeholder="جستجوی مشتری بر اساس نام، تذکره یا شماره...">
+                        <i class="fas fa-search"></i>
+                    </div>
+                </div>
+                
+                <div class="data-table-container">
+                    <table id="customer-table">
+                        <thead>
+                            <tr>
+                                <th>کد مشتری</th>
+                                <th>اسم مشتری</th>
+                                <th>تذکره</th>
+                                <th>شماره ارتباطی</th>
+                                <th>سیم خریداری شده</th>
+                                <th>کریدت کل</th>
+                                <th>کریدت باقیمانده</th>
+                                <th class="no-print">عملیات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="customer-table-body">
+                            <!-- داده‌های مشتریان اینجا لود می‌شوند -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div style="text-align: left; margin-top: 25px;" class="no-print">
+                    <button class="action-btn add-btn" id="add-customer-btn">
+                        <i class="fas fa-plus"></i> افزودن مشتری جدید
+                    </button>
+                </div>
+            </div>
+            
+            <!-- تب مدیریت کریدت -->
+            <div class="tab-content" id="credit">
+                <div class="section-title">
+                    <i class="fas fa-credit-card"></i> مدیریت کریدت (اعتبار)
+                </div>
+                
+                <div class="toolbar" style="margin-bottom: 20px; padding: 15px;">
+                    <div class="toolbar-group">
+                        <button class="action-btn print-btn print-tab-btn" data-tab="credit">
+                            <i class="fas fa-print"></i> پرینت
+                        </button>
+                        <button class="action-btn excel-btn export-tab-btn" data-tab="credit">
+                            <i class="fas fa-file-excel"></i> اکسل
+                        </button>
+                    </div>
+                    
+                    <div class="search-box" style="margin-bottom: 0; flex: 1; max-width: 400px;">
+                        <input type="text" id="search-credit" placeholder="جستجوی کریدت بر اساس مشتری، نوع یا شماره...">
+                        <i class="fas fa-search"></i>
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 20px;" class="no-print">
+                    <button class="action-btn add-btn" id="send-credit-btn" style="margin-left: 10px;">
+                        <i class="fas fa-paper-plane"></i> ثبت کریدت ارسالی
+                    </button>
+                    <button class="action-btn credit-btn" id="loan-credit-btn">
+                        <i class="fas fa-hand-holding-usd"></i> ثبت کریدت قرضی
+                    </button>
+                </div>
+                
+                <div class="data-table-container">
+                    <table id="credit-table">
+                        <thead>
+                            <tr>
+                                <th>شماره تراکنش</th>
+                                <th>نوع کریدت</th>
+                                <th>اسم مشتری</th>
+                                <th>شماره مشتری</th>
+                                <th>مقدار کریدت (افغانی)</th>
+                                <th>تاریخ</th>
+                                <th>وضعیت</th>
+                                <th>توضیحات</th>
+                                <th class="no-print">عملیات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="credit-table-body">
+                            <!-- داده‌های کریدت اینجا لود می‌شوند -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- تب تراکنش‌ها -->
+            <div class="tab-content" id="transactions">
+                <div class="section-title">
+                    <i class="fas fa-exchange-alt"></i> تاریخچه تراکنش‌ها
+                </div>
+                
+                <div class="toolbar" style="margin-bottom: 20px; padding: 15px;">
+                    <div class="toolbar-group">
+                        <button class="action-btn print-btn print-tab-btn" data-tab="transactions">
+                            <i class="fas fa-print"></i> پرینت
+                        </button>
+                        <button class="action-btn excel-btn export-tab-btn" data-tab="transactions">
+                            <i class="fas fa-file-excel"></i> اکسل
+                        </button>
+                    </div>
+                    
+                    <div class="search-box" style="margin-bottom: 0; flex: 1; max-width: 400px;">
+                        <input type="text" id="search-transaction" placeholder="جستجوی تراکنش بر اساس مشتری، نوع یا مقدار...">
+                        <i class="fas fa-search"></i>
+                    </div>
+                </div>
+                
+                <div class="data-table-container">
+                    <table id="transaction-table">
+                        <thead>
+                            <tr>
+                                <th>شماره تراکنش</th>
+                                <th>نوع</th>
+                                <th>فرستنده</th>
+                                <th>گیرنده</th>
+                                <th>مقدار (افغانی)</th>
+                                <th>تاریخ</th>
+                                <th>وضعیت</th>
+                                <th>توضیحات</th>
+                                <th class="no-print">عملیات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="transaction-table-body">
+                            <!-- داده‌های تراکنش‌ها اینجا لود می‌شوند -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- تب گزارشات -->
+            <div class="tab-content" id="reports">
+                <div class="section-title">
+                    <i class="fas fa-chart-bar"></i> گزارشات و آمار
+                </div>
+                
+                <div class="toolbar" style="margin-bottom: 20px; padding: 15px;">
+                    <div class="toolbar-group">
+                        <button class="action-btn print-btn print-tab-btn" data-tab="reports">
+                            <i class="fas fa-print"></i> پرینت
+                        </button>
+                        <button class="action-btn excel-btn" id="export-report-btn">
+                            <i class="fas fa-file-excel"></i> اکسل گزارش
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="report-type">نوع گزارش:</label>
+                        <select id="report-type">
+                            <option value="daily">گزارش روزانه</option>
+                            <option value="weekly">گزارش هفتگی</option>
+                            <option value="monthly">گزارش ماهانه</option>
+                            <option value="yearly">گزارش سالانه</option>
+                            <option value="custom">گزارش سفارشی</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="report-date">تاریخ:</label>
+                        <input type="date" id="report-date">
+                    </div>
+                </div>
+                
+                <div class="card" style="margin-top: 20px;">
+                    <div class="card-header">
+                        <h3>خلاصه گزارش</h3>
+                    </div>
+                    <div class="card-info">
+                        <p>تعداد سیم‌کارت‌های فروخته شده: <span class="highlight" id="report-sim-sold">۰</span></p>
+                        <p>مقدار کریدت ارسالی: <span class="highlight afghani" id="report-credit-sent">۰</span></p>
+                        <p>مقدار کریدت قرضی: <span class="highlight afghani" id="report-credit-loan">۰</span></p>
+                        <p>مشتریان جدید: <span class="highlight" id="report-new-customers">۰ نفر</span></p>
+                        <p>کل درآمد: <span class="highlight afghani" id="report-total-income">۰</span></p>
+                    </div>
+                </div>
+                
+                <div style="text-align: left; margin-top: 25px;" class="no-print">
+                    <button class="action-btn add-btn" id="generate-report-btn">
+                        <i class="fas fa-file-export"></i> تولید گزارش
+                    </button>
+                    <button class="action-btn print-btn" id="print-report-btn">
+                        <i class="fas fa-print"></i> چاپ گزارش
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- بخش مدیریت انواع -->
+        <div class="manage-types-section no-print">
+            <div class="section-title">
+                <i class="fas fa-cogs"></i> مدیریت انواع و دسته‌بندی‌ها
+            </div>
+            
+            <div class="types-container">
+                <div class="type-box">
+                    <h4>انواع سیم کارت</h4>
+                    <div class="type-items" id="sim-types-list">
+                        <!-- انواع سیم کارت -->
+                    </div>
+                    <div class="type-input-group">
+                        <input type="text" id="new-sim-type" placeholder="نوع جدید سیم کارت">
+                        <button class="action-btn add-btn" id="add-sim-type-btn">افزودن</button>
+                    </div>
+                </div>
+                
+                <div class="type-box">
+                    <h4>وضعیت‌های سیم کارت</h4>
+                    <div class="type-items" id="sim-statuses-list">
+                        <!-- وضعیت‌های سیم کارت -->
+                    </div>
+                    <div class="type-input-group">
+                        <input type="text" id="new-sim-status" placeholder="وضعیت جدید سیم کارت">
+                        <button class="action-btn add-btn" id="add-sim-status-btn">افزودن</button>
+                    </div>
+                </div>
+                
+                <div class="type-box">
+                    <h4>انواع تراکنش</h4>
+                    <div class="type-items" id="transaction-types-list">
+                        <!-- انواع تراکنش -->
+                    </div>
+                    <div class="type-input-group">
+                        <input type="text" id="new-transaction-type" placeholder="نوع جدید تراکنش">
+                        <button class="action-btn add-btn" id="add-transaction-type-btn">افزودن</button>
+                    </div>
+                </div>
+                
+                <div class="type-box">
+                    <h4>وضعیت‌های تراکنش</h4>
+                    <div class="type-items" id="transaction-statuses-list">
+                        <!-- وضعیت‌های تراکنش -->
+                    </div>
+                    <div class="type-input-group">
+                        <input type="text" id="new-transaction-status" placeholder="وضعیت جدید تراکنش">
+                        <button class="action-btn add-btn" id="add-transaction-status-btn">افزودن</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- مودال‌ها -->
+    <div class="modal" id="sim-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="sim-modal-title">ثبت سیم کارت روشن جدید</h2>
+                <button class="close-btn" id="close-sim-modal">&times;</button>
+            </div>
+            <form id="sim-form">
+                <input type="hidden" id="sim-id">
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="sim-number">شماره سیم کارت:</label>
+                        <input type="text" id="sim-number" placeholder="07XX XXX XXXX" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="sim-type">نوع سیم:</label>
+                        <input type="text" id="sim-type" placeholder="مثلاً: پیش‌پرداخت، پس‌پرداخت، دیتا" required>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="sim-customer">مشتری (اختیاری):</label>
+                        <input type="text" id="sim-customer" placeholder="اسم مشتری">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="sim-price">قیمت (افغانی):</label>
+                        <input type="number" id="sim-price" min="0" required>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="sim-status">وضعیت:</label>
+                        <input type="text" id="sim-status" placeholder="مثلاً: فعال، غیرفعال، رزرو" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="sim-activation-date">تاریخ فعال‌سازی:</label>
+                        <input type="date" id="sim-activation-date">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="sim-description">توضیحات:</label>
+                    <textarea id="sim-description" rows="3"></textarea>
+                </div>
+                
+                <button type="submit" class="action-btn add-btn" style="width: 100%; padding: 14px;">
+                    <i class="fas fa-save"></i> ذخیره اطلاعات
+                </button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- مودال مشتری -->
+    <div class="modal" id="customer-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="customer-modal-title">ثبت مشتری جدید</h2>
+                <button class="close-btn" id="close-customer-modal">&times;</button>
+            </div>
+            <form id="customer-form">
+                <input type="hidden" id="customer-id">
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="customer-name">اسم مشتری:</label>
+                        <input type="text" id="customer-name" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="customer-code">کد مشتری:</label>
+                        <input type="text" id="customer-code" required>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="customer-tazkira">تذکره:</label>
+                        <input type="text" id="customer-tazkira" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="customer-phone">شماره ارتباطی:</label>
+                        <input type="text" id="customer-phone" required>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="customer-sim">سیم کارت خریداری شده:</label>
+                    <select id="customer-sim">
+                        <option value="">بدون سیم</option>
+                        <!-- سیم‌ها اینجا لود می‌شوند -->
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="customer-address">آدرس:</label>
+                    <textarea id="customer-address" rows="2"></textarea>
+                </div>
+                
+                <button type="submit" class="action-btn add-btn" style="width: 100%; padding: 14px;">
+                    <i class="fas fa-save"></i> ذخیره اطلاعات
+                </button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- مودال کریدت -->
+    <div class="modal" id="credit-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="credit-modal-title">ثبت کریدت جدید</h2>
+                <button class="close-btn" id="close-credit-modal">&times;</button>
+            </div>
+            <form id="credit-form">
+                <input type="hidden" id="credit-id">
+                <input type="hidden" id="credit-type">
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="credit-customer-name">اسم مشتری:</label>
+                        <input type="text" id="credit-customer-name" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="credit-customer-phone">شماره مشتری:</label>
+                        <input type="text" id="credit-customer-phone" required>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="credit-amount">مقدار کریدت (افغانی):</label>
+                        <input type="number" id="credit-amount" min="0" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="credit-date">تاریخ:</label>
+                        <input type="date" id="credit-date" required>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="credit-description" id="credit-description-label">توضیحات:</label>
+                    <textarea id="credit-description" rows="3" placeholder="توضیحات مربوط به کریدت..."></textarea>
+                </div>
+                
+                <div class="form-group" id="loan-info-section" style="display: none;">
+                    <label for="loan-due-date">تاریخ سررسید قرض:</label>
+                    <input type="date" id="loan-due-date">
+                </div>
+                
+                <button type="submit" class="action-btn add-btn" style="width: 100%; padding: 14px;">
+                    <i class="fas fa-save"></i> ثبت کریدت
+                </button>
+            </form>
+        </div>
+    </div>
+    
+    <footer class="no-print">
+        <p>سیستم مدیریت سیم کارت‌های روشن و کریدت - نسخه پیشرفته &copy; ۱۴۰۲</p>
+        <p>اپراتور: روشن افغانستان | تمامی قیمت‌ها به افغانی | قابلیت‌های: پرینت، خروجی اکسل، مدیریت انواع</p>
+    </footer>
+    
+    <script>
+        // داده‌های نمونه برای سیستم
+        let simData = [
+            {id: 1, number: "0799 123 4567", type: "prepaid", customer: "احمد حسینی", price: 500, status: "فعال", activationDate: "1402-05-15", description: "سیم کارت پیش‌پرداخت"},
+            {id: 2, number: "0700 987 6543", type: "postpaid", customer: "محمد احمدزی", price: 1000, status: "فعال", activationDate: "1402-06-20", description: "سیم کارت پس‌پرداخت"},
+            {id: 3, number: "0777 555 1234", type: "data", customer: "فاطمه محمدی", price: 800, status: "فعال", activationDate: "1402-04-10", description: "سیم کارت دیتا"},
+            {id: 4, number: "0788 444 7890", type: "corporate", customer: "", price: 1500, status: "رزرو", activationDate: null, description: "برای سازمان‌ها"},
+            {id: 5, number: "0798 333 2222", type: "prepaid", customer: "علی کریمی", price: 500, status: "غیرفعال", activationDate: "1402-07-01", description: "غیرفعال"},
+            {id: 6, number: "0701 111 9999", type: "postpaid", customer: "", price: 1000, status: "فعال", activationDate: null, description: "آماده فروش"}
+        ];
+        
+        let customerData = [
+            {id: 1, code: "CUST-001", name: "احمد حسینی", tazkira: "کابل-۱۲۳۴۵۶۷", phone: "07991234567", simId: 1, address: "کابل، کارته سخی", regDate: "1402-05-10"},
+            {id: 2, code: "CUST-002", name: "محمد احمدزی", tazkira: "قندهار-۷۸۹۰۱۲۳", phone: "07009876543", simId: 2, address: "قندهار، سرآسیاب", regDate: "1402-06-15"},
+            {id: 3, code: "CUST-003", name: "فاطمه محمدی", tazkira: "هرات-۴۵۶۷۸۹۰", phone: "07775551234", simId: 3, address: "هرات، پل مالان", regDate: "1402-04-05"},
+            {id: 4, code: "CUST-004", name: "علی کریمی", tazkira: "مزار-۲۳۴۵۶۷۸", phone: "07983332222", simId: 5, address: "مزار شریف، بلوار اصلی", regDate: "1402-06-28"},
+            {id: 5, code: "CUST-005", name: "نجیب رحمانی", tazkira: "کابل-۸۹۰۱۲۳۴", phone: "07708887777", simId: null, address: "کابل، شهرنو", regDate: "1402-03-01"}
+        ];
+        
+        let creditData = [
+            {id: 1, type: "send", customerName: "احمد حسینی", customerPhone: "07991234567", amount: 5000, date: "1402-05-15", status: "completed", description: "کریدت برای خرید سیم کارت"},
+            {id: 2, type: "loan", customerName: "محمد احمدزی", customerPhone: "07009876543", amount: 10000, date: "1402-04-20", status: "pending", description: "قرض برای کسب و کار", dueDate: "1402-10-20"},
+            {id: 3, type: "send", customerName: "فاطمه محمدی", customerPhone: "07775551234", amount: 3000, date: "1402-07-10", status: "completed", description: "کریدت شارژ"},
+            {id: 4, type: "loan", customerName: "علی کریمی", customerPhone: "07983332222", amount: 8000, date: "1402-07-01", status: "completed", description: "قرض فامیلی", dueDate: "1402-12-01"},
+            {id: 5, type: "send", customerName: "احمد حسینی", customerPhone: "07991234567", amount: 2000, date: "1402-07-05", status: "completed", description: "کریدت اضافی"}
+        ];
+        
+        let transactionData = [
+            {id: 1, type: "sim_purchase", sender: "سیستم", receiver: "احمد حسینی", amount: 500, date: "1402-05-15", status: "completed", description: "خرید سیم کارت"},
+            {id: 2, type: "credit_send", sender: "سیستم", receiver: "محمد احمدزی", amount: 10000, date: "1402-04-20", status: "pending", description: "کریدت قرضی"},
+            {id: 3, type: "credit_send", sender: "سیستم", receiver: "فاطمه محمدی", amount: 3000, date: "1402-07-10", status: "completed", description: "کریدت ارسالی"},
+            {id: 4, type: "payment", sender: "علی کریمی", receiver: "سیستم", amount: 2000, date: "1402-07-12", status: "completed", description: "پرداخت قسط"},
+            {id: 5, type: "sim_purchase", sender: "سیستم", receiver: "نجیب رحمانی", amount: 800, date: "1402-07-15", status: "completed", description: "خرید سیم کارت دیتا"}
+        ];
+        
+        // انواع قابل ویرایش
+        let simTypes = ["پیش‌پرداخت", "پس‌پرداخت", "دیتا", "سازمانی"];
+        let simStatuses = ["فعال", "غیرفعال", "رزرو", "آماده فروش"];
+        let transactionTypes = ["خرید سیم", "کریدت ارسالی", "کریدت قرضی", "پرداخت", "شارژ"];
+        let transactionStatuses = ["تکمیل شده", "در انتظار", "لغو شده", "عودت داده شده"];
+        
+        // عناصر DOM
+        const simTableBody = document.getElementById('sim-table-body');
+        const customerTableBody = document.getElementById('customer-table-body');
+        const creditTableBody = document.getElementById('credit-table-body');
+        const transactionTableBody = document.getElementById('transaction-table-body');
+        const simModal = document.getElementById('sim-modal');
+        const customerModal = document.getElementById('customer-modal');
+        const creditModal = document.getElementById('credit-modal');
+        const tabs = document.querySelectorAll('.tab');
+        const tabContents = document.querySelectorAll('.tab-content');
+        
+        // تابع تبدیل اعداد فارسی
+        function toPersianNumbers(num) {
+            const persianDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+            return num.toString().replace(/\d/g, x => persianDigits[x]);
+        }
+        
+        // آپدیت داشبورد
+        function updateDashboard() {
+            // آمار سیم‌کارت‌ها
+            const totalSims = simData.length;
+            const activeSims = simData.filter(sim => sim.status === 'فعال').length;
+            const inactiveSims = simData.filter(sim => sim.status === 'غیرفعال').length;
+            const reservedSims = simData.filter(sim => sim.status === 'رزرو').length;
+            
+            document.getElementById('total-sims').textContent = toPersianNumbers(totalSims);
+            document.getElementById('active-sims').textContent = toPersianNumbers(activeSims);
+            document.getElementById('inactive-sims').textContent = toPersianNumbers(inactiveSims);
+            document.getElementById('reserved-sims').textContent = toPersianNumbers(reservedSims);
+            
+            // آمار مشتریان
+            const totalCustomers = customerData.length;
+            const activeCustomers = totalCustomers; // همه مشتریان فعال هستند
+            const creditCustomers = customerData.filter(c => {
+                const customerCredits = creditData.filter(credit => 
+                    credit.customerPhone === c.phone
+                );
+                return customerCredits.length > 0;
+            }).length;
+            
+            document.getElementById('total-customers').textContent = toPersianNumbers(totalCustomers);
+            document.getElementById('active-customers').textContent = toPersianNumbers(activeCustomers);
+            document.getElementById('credit-customers').textContent = toPersianNumbers(creditCustomers);
+            
+            // آمار کریدت
+            const totalCredit = creditData.reduce((sum, credit) => sum + credit.amount, 0);
+            const sentCredit = creditData
+                .filter(credit => credit.type === 'send')
+                .reduce((sum, credit) => sum + credit.amount, 0);
+            const loanCredit = creditData
+                .filter(credit => credit.type === 'loan')
+                .reduce((sum, credit) => sum + credit.amount, 0);
+            
+            document.getElementById('total-credit').textContent = toPersianNumbers(totalCredit);
+            document.getElementById('sent-credit').textContent = toPersianNumbers(sentCredit);
+            document.getElementById('loan-credit').textContent = toPersianNumbers(loanCredit);
+            
+            // آمار تراز
+            const totalReceived = transactionData
+                .filter(t => t.receiver === 'سیستم')
+                .reduce((sum, t) => sum + t.amount, 0);
+            const totalPaid = transactionData
+                .filter(t => t.sender === 'سیستم')
+                .reduce((sum, t) => sum + t.amount, 0);
+            const totalBalance = totalReceived - totalPaid;
+            
+            document.getElementById('total-balance').textContent = toPersianNumbers(totalBalance);
+            document.getElementById('total-received').textContent = toPersianNumbers(totalReceived);
+            document.getElementById('total-paid').textContent = toPersianNumbers(totalPaid);
+            
+            // آپدیت ویجت‌ها
+            const today = new Date().toISOString().split('T')[0].replace(/\d{4}/, '1402');
+            
+            const todaySent = creditData
+                .filter(credit => credit.type === 'send' && credit.date === today)
+                .reduce((sum, credit) => sum + credit.amount, 0);
+            
+            const todayLoan = creditData
+                .filter(credit => credit.type === 'loan' && credit.date === today)
+                .reduce((sum, credit) => sum + credit.amount, 0);
+            
+            const newCustomers = customerData.filter(c => c.regDate === today).length;
+            const todayTransactions = transactionData.filter(t => t.date === today).length;
+            
+            document.getElementById('today-sent').textContent = toPersianNumbers(todaySent);
+            document.getElementById('today-loan').textContent = toPersianNumbers(todayLoan);
+            document.getElementById('new-customers-widget').textContent = toPersianNumbers(newCustomers) + ' نفر';
+            document.getElementById('today-transactions').textContent = toPersianNumbers(todayTransactions);
+        }
+        
+        // نمایش انواع قابل ویرایش
+        function renderManageableTypes() {
+            // نمایش انواع سیم‌کارت
+            const simTypesList = document.getElementById('sim-types-list');
+            simTypesList.innerHTML = '';
+            simTypes.forEach((type, index) => {
+                const tag = document.createElement('div');
+                tag.className = 'type-tag';
+                tag.innerHTML = `
+                    ${type}
+                    <button class="remove-type" data-type="sim" data-index="${index}">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+                simTypesList.appendChild(tag);
+            });
+            
+            // نمایش وضعیت‌های سیم‌کارت
+            const simStatusesList = document.getElementById('sim-statuses-list');
+            simStatusesList.innerHTML = '';
+            simStatuses.forEach((status, index) => {
+                const tag = document.createElement('div');
+                tag.className = 'type-tag';
+                tag.innerHTML = `
+                    ${status}
+                    <button class="remove-type" data-type="simStatus" data-index="${index}">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+                simStatusesList.appendChild(tag);
+            });
+            
+            // نمایش انواع تراکنش
+            const transactionTypesList = document.getElementById('transaction-types-list');
+            transactionTypesList.innerHTML = '';
+            transactionTypes.forEach((type, index) => {
+                const tag = document.createElement('div');
+                tag.className = 'type-tag';
+                tag.innerHTML = `
+                    ${type}
+                    <button class="remove-type" data-type="transaction" data-index="${index}">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+                transactionTypesList.appendChild(tag);
+            });
+            
+            // نمایش وضعیت‌های تراکنش
+            const transactionStatusesList = document.getElementById('transaction-statuses-list');
+            transactionStatusesList.innerHTML = '';
+            transactionStatuses.forEach((status, index) => {
+                const tag = document.createElement('div');
+                tag.className = 'type-tag';
+                tag.innerHTML = `
+                    ${status}
+                    <button class="remove-type" data-type="transactionStatus" data-index="${index}">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+                transactionStatusesList.appendChild(tag);
+            });
+            
+            // اضافه کردن رویداد حذف
+            document.querySelectorAll('.remove-type').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const type = this.getAttribute('data-type');
+                    const index = parseInt(this.getAttribute('data-index'));
+                    removeType(type, index);
+                });
+            });
+        }
+        
+        // حذف نوع
+        function removeType(type, index) {
+            if (confirm('آیا از حذف این نوع مطمئن هستید؟')) {
+                switch(type) {
+                    case 'sim':
+                        simTypes.splice(index, 1);
+                        break;
+                    case 'simStatus':
+                        simStatuses.splice(index, 1);
+                        break;
+                    case 'transaction':
+                        transactionTypes.splice(index, 1);
+                        break;
+                    case 'transactionStatus':
+                        transactionStatuses.splice(index, 1);
+                        break;
+                }
+                renderManageableTypes();
+            }
+        }
+        
+        // اضافه کردن نوع جدید
+        function addNewType(type, value) {
+            if (!value.trim()) {
+                alert('لطفا مقدار را وارد کنید');
+                return;
+            }
+            
+            switch(type) {
+                case 'sim':
+                    if (simTypes.includes(value.trim())) {
+                        alert('این نوع از قبل وجود دارد');
+                        return;
+                    }
+                    simTypes.push(value.trim());
+                    break;
+                case 'simStatus':
+                    if (simStatuses.includes(value.trim())) {
+                        alert('این وضعیت از قبل وجود دارد');
+                        return;
+                    }
+                    simStatuses.push(value.trim());
+                    break;
+                case 'transaction':
+                    if (transactionTypes.includes(value.trim())) {
+                        alert('این نوع از قبل وجود دارد');
+                        return;
+                    }
+                    transactionTypes.push(value.trim());
+                    break;
+                case 'transactionStatus':
+                    if (transactionStatuses.includes(value.trim())) {
+                        alert('این وضعیت از قبل وجود دارد');
+                        return;
+                    }
+                    transactionStatuses.push(value.trim());
+                    break;
+            }
+            
+            renderManageableTypes();
+        }
+        
+        // نمایش داده‌های سیم کارت
+        function renderSimTable(data = simData) {
+            simTableBody.innerHTML = '';
+            
+            data.forEach(sim => {
+                // وضعیت
+                let statusClass;
+                switch(sim.status) {
+                    case 'فعال': statusClass = 'active'; break;
+                    case 'غیرفعال': statusClass = 'inactive'; break;
+                    case 'رزرو': statusClass = 'pending'; break;
+                    default: statusClass = '';
+                }
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="sim-number">${sim.number}</td>
+                    <td>${sim.type}</td>
+                    <td>${sim.customer || 'بدون مشتری'}</td>
+                    <td>${sim.customer ? customerData.find(c => c.name === sim.customer)?.phone || '-' : '-'}</td>
+                    <td>${toPersianNumbers(sim.price)} <span class="afghani"></span></td>
+                    <td><span class="status ${statusClass}">${sim.status}</span></td>
+                    <td>${sim.activationDate ? sim.activationDate.replace(/-/g, '/') : '-'}</td>
+                    <td class="no-print">
+                        <button class="action-btn edit-btn edit-sim" data-id="${sim.id}"><i class="fas fa-edit"></i></button>
+                        <button class="action-btn delete-btn delete-sim" data-id="${sim.id}"><i class="fas fa-trash"></i></button>
+                    </td>
+                `;
+                simTableBody.appendChild(row);
+            });
+            
+            // اضافه کردن رویدادها
+            document.querySelectorAll('.edit-sim').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const id = parseInt(this.getAttribute('data-id'));
+                    editSim(id);
+                });
+            });
+            
+            document.querySelectorAll('.delete-sim').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const id = parseInt(this.getAttribute('data-id'));
+                    deleteSim(id);
+                });
+            });
+        }
+        
+        // نمایش داده‌های مشتریان
+        function renderCustomerTable(data = customerData) {
+            customerTableBody.innerHTML = '';
+            
+            data.forEach(customer => {
+                const sim = customer.simId ? simData.find(s => s.id === customer.simId) : null;
+                
+                // محاسبه کریدت مشتری
+                const customerCredits = creditData.filter(credit => credit.customerPhone === customer.phone);
+                const totalCredit = customerCredits.reduce((sum, credit) => sum + credit.amount, 0);
+                const remainingCredit = totalCredit; // در این نسخه ساده، کل کریدت باقیمانده است
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${customer.code}</td>
+                    <td>${customer.name}</td>
+                    <td>${customer.tazkira}</td>
+                    <td>${customer.phone}</td>
+                    <td>${sim ? sim.number : 'بدون سیم'}</td>
+                    <td>${toPersianNumbers(totalCredit)} <span class="afghani"></span></td>
+                    <td>${toPersianNumbers(remainingCredit)} <span class="afghani"></span></td>
+                    <td class="no-print">
+                        <button class="action-btn edit-btn edit-customer" data-id="${customer.id}"><i class="fas fa-edit"></i></button>
+                        <button class="action-btn delete-btn delete-customer" data-id="${customer.id}"><i class="fas fa-trash"></i></button>
+                        <button class="action-btn credit-btn add-customer-credit" data-phone="${customer.phone}" data-name="${customer.name}"><i class="fas fa-plus"></i> کریدت</button>
+                    </td>
+                `;
+                customerTableBody.appendChild(row);
+            });
+            
+            // اضافه کردن رویدادها
+            document.querySelectorAll('.edit-customer').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const id = parseInt(this.getAttribute('data-id'));
+                    editCustomer(id);
+                });
+            });
+            
+            document.querySelectorAll('.delete-customer').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const id = parseInt(this.getAttribute('data-id'));
+                    deleteCustomer(id);
+                });
+            });
+            
+            document.querySelectorAll('.add-customer-credit').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const phone = this.getAttribute('data-phone');
+                    const name = this.getAttribute('data-name');
+                    openCreditModal('send', name, phone);
+                });
+            });
+        }
+        
+        // نمایش داده‌های کریدت
+        function renderCreditTable(data = creditData) {
+            creditTableBody.innerHTML = '';
+            
+            data.forEach(credit => {
+                // نوع کریدت
+                let typeText, typeClass;
+                switch(credit.type) {
+                    case 'send': typeText = 'ارسالی'; typeClass = 'send'; break;
+                    case 'loan': typeText = 'قرضی'; typeClass = 'loan'; break;
+                    default: typeText = credit.type; typeClass = '';
+                }
+                
+                // وضعیت
+                let statusText, statusClass;
+                switch(credit.status) {
+                    case 'completed': statusText = 'تکمیل شده'; statusClass = 'active'; break;
+                    case 'pending': statusText = 'در انتظار'; statusClass = 'pending'; break;
+                    case 'cancelled': statusText = 'لغو شده'; statusClass = 'inactive'; break;
+                    default: statusText = credit.status; statusClass = '';
+                }
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>CR-${credit.id.toString().padStart(5, '0')}</td>
+                    <td><span class="transaction-type ${typeClass}">${typeText}</span></td>
+                    <td>${credit.customerName}</td>
+                    <td>${credit.customerPhone}</td>
+                    <td>${toPersianNumbers(credit.amount)} <span class="afghani"></span></td>
+                    <td>${credit.date.replace(/-/g, '/')}</td>
+                    <td><span class="status ${statusClass}">${statusText}</span></td>
+                    <td>${credit.description}</td>
+                    <td class="no-print">
+                        <button class="action-btn edit-btn edit-credit" data-id="${credit.id}"><i class="fas fa-edit"></i></button>
+                        <button class="action-btn delete-btn delete-credit" data-id="${credit.id}"><i class="fas fa-trash"></i></button>
+                    </td>
+                `;
+                creditTableBody.appendChild(row);
+            });
+            
+            // اضافه کردن رویدادها
+            document.querySelectorAll('.edit-credit').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const id = parseInt(this.getAttribute('data-id'));
+                    editCredit(id);
+                });
+            });
+            
+            document.querySelectorAll('.delete-credit').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const id = parseInt(this.getAttribute('data-id'));
+                    deleteCredit(id);
+                });
+            });
+        }
+        
+        // نمایش داده‌های تراکنش‌ها
+        function renderTransactionTable(data = transactionData) {
+            transactionTableBody.innerHTML = '';
+            
+            data.forEach(transaction => {
+                // نوع تراکنش
+                let typeText, typeClass;
+                switch(transaction.type) {
+                    case 'sim_purchase': typeText = 'خرید سیم'; typeClass = 'send'; break;
+                    case 'credit_send': typeText = 'کریدت'; typeClass = 'send'; break;
+                    case 'payment': typeText = 'پرداخت'; typeClass = 'receive'; break;
+                    default: typeText = transaction.type; typeClass = '';
+                }
+                
+                // وضعیت
+                let statusText, statusClass;
+                switch(transaction.status) {
+                    case 'completed': statusText = 'تکمیل شده'; statusClass = 'active'; break;
+                    case 'pending': statusText = 'در انتظار'; statusClass = 'pending'; break;
+                    default: statusText = transaction.status; statusClass = '';
+                }
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>TRX-${transaction.id.toString().padStart(5, '0')}</td>
+                    <td><span class="transaction-type ${typeClass}">${typeText}</span></td>
+                    <td>${transaction.sender}</td>
+                    <td>${transaction.receiver}</td>
+                    <td>${toPersianNumbers(transaction.amount)} <span class="afghani"></span></td>
+                    <td>${transaction.date.replace(/-/g, '/')}</td>
+                    <td><span class="status ${statusClass}">${statusText}</span></td>
+                    <td>${transaction.description}</td>
+                    <td class="no-print">
+                        <button class="action-btn view-btn view-transaction" data-id="${transaction.id}"><i class="fas fa-eye"></i></button>
+                    </td>
+                `;
+                transactionTableBody.appendChild(row);
+            });
+        }
+        
+        // افزودن سیم جدید
+        function addSim() {
+            document.getElementById('sim-modal-title').textContent = 'ثبت سیم کارت روشن جدید';
+            document.getElementById('sim-id').value = '';
+            document.getElementById('sim-number').value = '';
+            document.getElementById('sim-type').value = '';
+            document.getElementById('sim-customer').value = '';
+            document.getElementById('sim-price').value = '';
+            document.getElementById('sim-status').value = '';
+            document.getElementById('sim-activation-date').value = '';
+            document.getElementById('sim-description').value = '';
+            simModal.style.display = 'flex';
+        }
+        
+        // ویرایش سیم موجود
+        function editSim(id) {
+            const sim = simData.find(s => s.id === id);
+            if (!sim) return;
+            
+            document.getElementById('sim-modal-title').textContent = 'ویرایش سیم کارت';
+            document.getElementById('sim-id').value = sim.id;
+            document.getElementById('sim-number').value = sim.number;
+            document.getElementById('sim-type').value = sim.type;
+            document.getElementById('sim-customer').value = sim.customer || '';
+            document.getElementById('sim-price').value = sim.price;
+            document.getElementById('sim-status').value = sim.status;
+            document.getElementById('sim-activation-date').value = sim.activationDate || '';
+            document.getElementById('sim-description').value = sim.description || '';
+            simModal.style.display = 'flex';
+        }
+        
+        // حذف سیم
+        function deleteSim(id) {
+            const sim = simData.find(s => s.id === id);
+            if (!sim) return;
+            
+            if (confirm('آیا از حذف این سیم کارت مطمئن هستید؟')) {
+                simData = simData.filter(s => s.id !== id);
+                renderSimTable();
+                updateDashboard();
+            }
+        }
+        
+        // افزودن مشتری جدید
+        function addCustomer() {
+            document.getElementById('customer-modal-title').textContent = 'ثبت مشتری جدید';
+            document.getElementById('customer-id').value = '';
+            document.getElementById('customer-name').value = '';
+            document.getElementById('customer-code').value = '';
+            document.getElementById('customer-tazkira').value = '';
+            document.getElementById('customer-phone').value = '';
+            document.getElementById('customer-sim').value = '';
+            document.getElementById('customer-address').value = '';
+            customerModal.style.display = 'flex';
+        }
+        
+        // ویرایش مشتری موجود
+        function editCustomer(id) {
+            const customer = customerData.find(c => c.id === id);
+            if (!customer) return;
+            
+            document.getElementById('customer-modal-title').textContent = 'ویرایش مشتری';
+            document.getElementById('customer-id').value = customer.id;
+            document.getElementById('customer-name').value = customer.name;
+            document.getElementById('customer-code').value = customer.code;
+            document.getElementById('customer-tazkira').value = customer.tazkira;
+            document.getElementById('customer-phone').value = customer.phone;
+            document.getElementById('customer-sim').value = customer.simId || '';
+            document.getElementById('customer-address').value = customer.address || '';
+            customerModal.style.display = 'flex';
+        }
+        
+        // حذف مشتری
+        function deleteCustomer(id) {
+            const customer = customerData.find(c => c.id === id);
+            if (!customer) return;
+            
+            // بررسی اینکه آیا مشتری کریدت دارد
+            const customerCredits = creditData.filter(credit => credit.customerPhone === customer.phone);
+            
+            if (customerCredits.length > 0) {
+                alert('این مشتری کریدت ثبت شده دارد. ابتدا کریدت‌های مشتری را حذف کنید.');
+                return;
+            }
+            
+            if (confirm('آیا از حذف این مشتری مطمئن هستید؟')) {
+                customerData = customerData.filter(c => c.id !== id);
+                renderCustomerTable();
+                renderSimTable();
+                updateDashboard();
+            }
+        }
+        
+        // باز کردن مودال کریدت
+        function openCreditModal(type, customerName = '', customerPhone = '') {
+            const modalTitle = document.getElementById('credit-modal-title');
+            const descriptionLabel = document.getElementById('credit-description-label');
+            const loanInfoSection = document.getElementById('loan-info-section');
+            
+            if (type === 'send') {
+                modalTitle.textContent = 'ثبت کریدت ارسالی';
+                descriptionLabel.textContent = 'توضیحات کریدت ارسالی:';
+                loanInfoSection.style.display = 'none';
+            } else {
+                modalTitle.textContent = 'ثبت کریدت قرضی';
+                descriptionLabel.textContent = 'توضیحات کریدت قرضی:';
+                loanInfoSection.style.display = 'block';
+            }
+            
+            document.getElementById('credit-id').value = '';
+            document.getElementById('credit-type').value = type;
+            document.getElementById('credit-customer-name').value = customerName;
+            document.getElementById('credit-customer-phone').value = customerPhone;
+            document.getElementById('credit-amount').value = '';
+            document.getElementById('credit-date').value = '';
+            document.getElementById('credit-description').value = '';
+            document.getElementById('loan-due-date').value = '';
+            
+            creditModal.style.display = 'flex';
+        }
+        
+        // ویرایش کریدت موجود
+        function editCredit(id) {
+            const credit = creditData.find(c => c.id === id);
+            if (!credit) return;
+            
+            const modalTitle = document.getElementById('credit-modal-title');
+            const descriptionLabel = document.getElementById('credit-description-label');
+            const loanInfoSection = document.getElementById('loan-info-section');
+            
+            if (credit.type === 'send') {
+                modalTitle.textContent = 'ویرایش کریدت ارسالی';
+                descriptionLabel.textContent = 'توضیحات کریدت ارسالی:';
+                loanInfoSection.style.display = 'none';
+            } else {
+                modalTitle.textContent = 'ویرایش کریدت قرضی';
+                descriptionLabel.textContent = 'توضیحات کریدت قرضی:';
+                loanInfoSection.style.display = 'block';
+            }
+            
+            document.getElementById('credit-id').value = credit.id;
+            document.getElementById('credit-type').value = credit.type;
+            document.getElementById('credit-customer-name').value = credit.customerName;
+            document.getElementById('credit-customer-phone').value = credit.customerPhone;
+            document.getElementById('credit-amount').value = credit.amount;
+            document.getElementById('credit-date').value = credit.date;
+            document.getElementById('credit-description').value = credit.description;
+            document.getElementById('loan-due-date').value = credit.dueDate || '';
+            
+            creditModal.style.display = 'flex';
+        }
+        
+        // حذف کریدت
+        function deleteCredit(id) {
+            if (confirm('آیا از حذف این کریدت مطمئن هستید؟')) {
+                creditData = creditData.filter(c => c.id !== id);
+                renderCreditTable();
+                renderCustomerTable();
+                updateDashboard();
+            }
+        }
+        
+        // رویدادهای تب‌ها
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const tabId = tab.getAttribute('data-tab');
+                
+                // حذف کلاس active از همه تب‌ها
+                tabs.forEach(t => t.classList.remove('active'));
+                tabContents.forEach(tc => tc.classList.remove('active'));
+                
+                // اضافه کردن کلاس active به تب و محتوای انتخاب شده
+                tab.classList.add('active');
+                document.getElementById(tabId).classList.add('active');
+            });
+        });
+        
+        // رویدادهای فرم سیم کارت
+        document.getElementById('sim-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const id = document.getElementById('sim-id').value;
+            const number = document.getElementById('sim-number').value;
+            const type = document.getElementById('sim-type').value;
+            const customer = document.getElementById('sim-customer').value;
+            const price = parseInt(document.getElementById('sim-price').value);
+            const status = document.getElementById('sim-status').value;
+            const activationDate = document.getElementById('sim-activation-date').value;
+            const description = document.getElementById('sim-description').value;
+            
+            if (id) {
+                // ویرایش سیم موجود
+                const index = simData.findIndex(s => s.id === parseInt(id));
+                simData[index] = {
+                    id: parseInt(id),
+                    number,
+                    type,
+                    customer,
+                    price,
+                    status,
+                    activationDate: activationDate || simData[index].activationDate,
+                    description
+                };
+            } else {
+                // افزودن سیم جدید
+                const newId = simData.length > 0 ? Math.max(...simData.map(s => s.id)) + 1 : 1;
+                simData.push({
+                    id: newId,
+                    number,
+                    type,
+                    customer,
+                    price,
+                    status,
+                    activationDate: status === 'فعال' ? (activationDate || getTodayDate()) : null,
+                    description
+                });
+                
+                // اگر مشتری مشخص شده باشد، مشتری را ثبت یا آپدیت کنیم
+                if (customer) {
+                    // بررسی وجود مشتری
+                    const existingCustomer = customerData.find(c => c.name === customer);
+                    
+                    if (!existingCustomer) {
+                        // ایجاد مشتری جدید
+                        const newCustomerId = customerData.length > 0 ? Math.max(...customerData.map(c => c.id)) + 1 : 1;
+                        customerData.push({
+                            id: newCustomerId,
+                            code: `CUST-${newCustomerId.toString().padStart(3, '0')}`,
+                            name: customer,
+                            tazkira: 'ثبت نشده',
+                            phone: 'ثبت نشده',
+                            simId: newId,
+                            address: '',
+                            regDate: getTodayDate()
+                        });
+                    } else {
+                        // آپدیت مشتری موجود
+                        existingCustomer.simId = newId;
+                    }
+                    
+                    // ثبت تراکنش خرید سیم
+                    const newTransactionId = transactionData.length > 0 ? Math.max(...transactionData.map(t => t.id)) + 1 : 1;
+                    transactionData.push({
+                        id: newTransactionId,
+                        type: 'sim_purchase',
+                        sender: 'سیستم',
+                        receiver: customer,
+                        amount: price,
+                        date: getTodayDate(),
+                        status: 'completed',
+                        description: `خرید سیم کارت ${number}`
+                    });
+                }
+            }
+            
+            renderSimTable();
+            renderCustomerTable();
+            renderTransactionTable();
+            updateDashboard();
+            simModal.style.display = 'none';
+            alert('اطلاعات سیم کارت با موفقیت ذخیره شد.');
+        });
+        
+        // رویدادهای فرم مشتری
+        document.getElementById('customer-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const id = document.getElementById('customer-id').value;
+            const name = document.getElementById('customer-name').value;
+            const code = document.getElementById('customer-code').value;
+            const tazkira = document.getElementById('customer-tazkira').value;
+            const phone = document.getElementById('customer-phone').value;
+            const simId = document.getElementById('customer-sim').value ? parseInt(document.getElementById('customer-sim').value) : null;
+            const address = document.getElementById('customer-address').value;
+            
+            if (id) {
+                // ویرایش مشتری موجود
+                const index = customerData.findIndex(c => c.id === parseInt(id));
+                customerData[index] = {
+                    id: parseInt(id),
+                    name,
+                    code,
+                    tazkira,
+                    phone,
+                    simId,
+                    address,
+                    regDate: customerData[index].regDate
+                };
+                
+                // آپدیت سیم مربوطه
+                if (simId) {
+                    const simIndex = simData.findIndex(s => s.id === simId);
+                    if (simIndex !== -1) {
+                        simData[simIndex].customer = name;
+                    }
+                }
+            } else {
+                // افزودن مشتری جدید
+                const newId = customerData.length > 0 ? Math.max(...customerData.map(c => c.id)) + 1 : 1;
+                customerData.push({
+                    id: newId,
+                    name,
+                    code,
+                    tazkira,
+                    phone,
+                    simId,
+                    address,
+                    regDate: getTodayDate()
+                });
+                
+                // آپدیت سیم مربوطه
+                if (simId) {
+                    const simIndex = simData.findIndex(s => s.id === simId);
+                    if (simIndex !== -1) {
+                        simData[simIndex].customer = name;
+                    }
+                }
+            }
+            
+            renderCustomerTable();
+            renderSimTable();
+            updateDashboard();
+            customerModal.style.display = 'none';
+            alert('اطلاعات مشتری با موفقیت ذخیره شد.');
+        });
+        
+        // رویدادهای فرم کریدت
+        document.getElementById('credit-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const id = document.getElementById('credit-id').value;
+            const type = document.getElementById('credit-type').value;
+            const customerName = document.getElementById('credit-customer-name').value;
+            const customerPhone = document.getElementById('credit-customer-phone').value;
+            const amount = parseInt(document.getElementById('credit-amount').value);
+            const date = document.getElementById('credit-date').value;
+            const description = document.getElementById('credit-description').value;
+            const dueDate = type === 'loan' ? document.getElementById('loan-due-date').value : null;
+            
+            if (id) {
+                // ویرایش کریدت موجود
+                const index = creditData.findIndex(c => c.id === parseInt(id));
+                creditData[index] = {
+                    id: parseInt(id),
+                    type,
+                    customerName,
+                    customerPhone,
+                    amount,
+                    date,
+                    status: creditData[index].status,
+                    description,
+                    dueDate
+                };
+            } else {
+                // افزودن کریدت جدید
+                const newId = creditData.length > 0 ? Math.max(...creditData.map(c => c.id)) + 1 : 1;
+                const status = 'completed';
+                
+                creditData.push({
+                    id: newId,
+                    type,
+                    customerName,
+                    customerPhone,
+                    amount,
+                    date,
+                    status,
+                    description,
+                    dueDate
+                });
+                
+                // ثبت تراکنش
+                const newTransactionId = transactionData.length > 0 ? Math.max(...transactionData.map(t => t.id)) + 1 : 1;
+                transactionData.push({
+                    id: newTransactionId,
+                    type: 'credit_send',
+                    sender: 'سیستم',
+                    receiver: customerName,
+                    amount: amount,
+                    date: date,
+                    status: status,
+                    description: type === 'send' ? 'کریدت ارسالی' : 'کریدت قرضی'
+                });
+            }
+            
+            renderCreditTable();
+            renderCustomerTable();
+            renderTransactionTable();
+            updateDashboard();
+            creditModal.style.display = 'none';
+            alert('کریدت با موفقیت ثبت شد.');
+        });
+        
+        // رویدادهای جستجو
+        document.getElementById('search-sim').addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            const filteredData = simData.filter(sim => 
+                sim.number.toLowerCase().includes(searchTerm) || 
+                sim.type.toLowerCase().includes(searchTerm) ||
+                sim.status.toLowerCase().includes(searchTerm) ||
+                (sim.customer && sim.customer.toLowerCase().includes(searchTerm))
+            );
+            renderSimTable(filteredData);
+        });
+        
+        document.getElementById('search-customer').addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            const filteredData = customerData.filter(customer => 
+                customer.name.toLowerCase().includes(searchTerm) || 
+                customer.tazkira.toLowerCase().includes(searchTerm) ||
+                customer.phone.toLowerCase().includes(searchTerm) ||
+                customer.code.toLowerCase().includes(searchTerm)
+            );
+            renderCustomerTable(filteredData);
+        });
+        
+        document.getElementById('search-credit').addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            const filteredData = creditData.filter(credit => 
+                credit.customerName.toLowerCase().includes(searchTerm) || 
+                credit.customerPhone.toLowerCase().includes(searchTerm) ||
+                credit.type.toLowerCase().includes(searchTerm)
+            );
+            renderCreditTable(filteredData);
+        });
+        
+        document.getElementById('search-transaction').addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            const filteredData = transactionData.filter(transaction => 
+                transaction.sender.toLowerCase().includes(searchTerm) || 
+                transaction.receiver.toLowerCase().includes(searchTerm) ||
+                transaction.type.toLowerCase().includes(searchTerm)
+            );
+            renderTransactionTable(filteredData);
+        });
+        
+        // رویدادهای مودال
+        document.getElementById('add-sim-btn').addEventListener('click', addSim);
+        document.getElementById('add-customer-btn').addEventListener('click', addCustomer);
+        document.getElementById('send-credit-btn').addEventListener('click', () => openCreditModal('send'));
+        document.getElementById('loan-credit-btn').addEventListener('click', () => openCreditModal('loan'));
+        
+        document.getElementById('close-sim-modal').addEventListener('click', () => {
+            simModal.style.display = 'none';
+        });
+        
+        document.getElementById('close-customer-modal').addEventListener('click', () => {
+            customerModal.style.display = 'none';
+        });
+        
+        document.getElementById('close-credit-modal').addEventListener('click', () => {
+            creditModal.style.display = 'none';
+        });
+        
+        // بستن مودال با کلیک خارج از آن
+        window.addEventListener('click', (e) => {
+            if (e.target === simModal) {
+                simModal.style.display = 'none';
+            }
+            if (e.target === customerModal) {
+                customerModal.style.display = 'none';
+            }
+            if (e.target === creditModal) {
+                creditModal.style.display = 'none';
+            }
+        });
+        
+        // تولید گزارش
+        document.getElementById('generate-report-btn').addEventListener('click', function() {
+            const reportType = document.getElementById('report-type').value;
+            const reportDate = document.getElementById('report-date').value;
+            
+            // محاسبات گزارش
+            const simSold = simData.filter(sim => sim.customer && sim.customer !== '').length;
+            const creditSent = creditData
+                .filter(credit => credit.type === 'send')
+                .reduce((sum, credit) => sum + credit.amount, 0);
+            const creditLoan = creditData
+                .filter(credit => credit.type === 'loan')
+                .reduce((sum, credit) => sum + credit.amount, 0);
+            const newCustomers = customerData.length;
+            const totalIncome = transactionData
+                .filter(t => t.receiver === 'سیستم')
+                .reduce((sum, t) => sum + t.amount, 0);
+            
+            document.getElementById('report-sim-sold').textContent = toPersianNumbers(simSold);
+            document.getElementById('report-credit-sent').textContent = toPersianNumbers(creditSent);
+            document.getElementById('report-credit-loan').textContent = toPersianNumbers(creditLoan);
+            document.getElementById('report-new-customers').textContent = toPersianNumbers(newCustomers) + ' نفر';
+            document.getElementById('report-total-income').textContent = toPersianNumbers(totalIncome);
+            
+            alert(`گزارش ${reportType} برای تاریخ ${reportDate} با موفقیت تولید شد.`);
+        });
+        
+        // چاپ گزارش
+        document.getElementById('print-report-btn').addEventListener('click', function() {
+            window.print();
+        });
+        
+        // چاپ کل صفحه
+        document.getElementById('print-all-btn').addEventListener('click', function() {
+            window.print();
+        });
+        
+        // چاپ تب جاری
+        document.querySelectorAll('.print-tab-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const tab = this.getAttribute('data-tab');
+                const tabContent = document.getElementById(tab);
+                
+                // نمایش تب جاری
+                tabs.forEach(t => t.classList.remove('active'));
+                tabContents.forEach(tc => tc.classList.remove('active'));
+                
+                document.querySelector(`.tab[data-tab="${tab}"]`).classList.add('active');
+                tabContent.classList.add('active');
+                
+                // چاپ
+                setTimeout(() => {
+                    window.print();
+                }, 100);
+            });
+        });
+        
+        // خروجی اکسل
+        function exportToExcel(data, fileName, sheetName) {
+            try {
+                const ws = XLSX.utils.json_to_sheet(data);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, sheetName);
+                XLSX.writeFile(wb, `${fileName}.xlsx`);
+                return true;
+            } catch (error) {
+                console.error('خطا در ایجاد فایل اکسل:', error);
+                alert('خطا در ایجاد فایل اکسل. لطفا دوباره تلاش کنید.');
+                return false;
+            }
+        }
+        
+        // خروجی اکسل همه داده‌ها
+        document.getElementById('export-excel-btn').addEventListener('click', function() {
+            const allData = {
+                سیم_کارت‌ها: simData.map(sim => ({
+                    'شماره سیم کارت': sim.number,
+                    'نوع سیم': sim.type,
+                    'مشتری': sim.customer || '',
+                    'قیمت (افغانی)': sim.price,
+                    'وضعیت': sim.status,
+                    'تاریخ فعال‌سازی': sim.activationDate,
+                    'توضیحات': sim.description
+                })),
+                مشتریان: customerData.map(customer => {
+                    const sim = customer.simId ? simData.find(s => s.id === customer.simId) : null;
+                    return {
+                        'کد مشتری': customer.code,
+                        'اسم مشتری': customer.name,
+                        'تذکره': customer.tazkira,
+                        'شماره ارتباطی': customer.phone,
+                        'سیم خریداری شده': sim ? sim.number : 'بدون سیم',
+                        'آدرس': customer.address,
+                        'تاریخ ثبت': customer.regDate
+                    };
+                }),
+                کریدت‌ها: creditData.map(credit => ({
+                    'نوع کریدت': credit.type === 'send' ? 'ارسالی' : 'قرضی',
+                    'اسم مشتری': credit.customerName,
+                    'شماره مشتری': credit.customerPhone,
+                    'مقدار کریدت (افغانی)': credit.amount,
+                    'تاریخ': credit.date,
+                    'وضعیت': credit.status,
+                    'توضیحات': credit.description,
+                    'تاریخ سررسید': credit.dueDate || ''
+                })),
+                تراکنش‌ها: transactionData.map(transaction => ({
+                    'نوع تراکنش': transaction.type,
+                    'فرستنده': transaction.sender,
+                    'گیرنده': transaction.receiver,
+                    'مقدار (افغانی)': transaction.amount,
+                    'تاریخ': transaction.date,
+                    'وضعیت': transaction.status,
+                    'توضیحات': transaction.description
+                }))
+            };
+            
+            // ایجاد یک فایل اکسل با چندین شیت
+            const wb = XLSX.utils.book_new();
+            
+            Object.keys(allData).forEach(sheetName => {
+                const ws = XLSX.utils.json_to_sheet(allData[sheetName]);
+                XLSX.utils.book_append_sheet(wb, ws, sheetName);
+            });
+            
+            XLSX.writeFile(wb, `گزارش_سیم_کارت_های_روشن_${getTodayDate()}.xlsx`);
+            alert('فایل اکسل با موفقیت ایجاد شد.');
+        });
+        
+        // خروجی اکسل تب جاری
+        document.querySelectorAll('.export-tab-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const tab = this.getAttribute('data-tab');
+                let data, fileName, sheetName;
+                
+                switch(tab) {
+                    case 'sims':
+                        data = simData;
+                        fileName = 'سیم_کارت_های_روشن';
+                        sheetName = 'سیم کارت‌ها';
+                        break;
+                    case 'customers':
+                        data = customerData;
+                        fileName = 'مشتریان';
+                        sheetName = 'مشتریان';
+                        break;
+                    case 'credit':
+                        data = creditData;
+                        fileName = 'کریدت‌ها';
+                        sheetName = 'کریدت‌ها';
+                        break;
+                    case 'transactions':
+                        data = transactionData;
+                        fileName = 'تراکنش‌ها';
+                        sheetName = 'تراکنش‌ها';
+                        break;
+                    default:
+                        return;
+                }
+                
+                exportToExcel(data, fileName, sheetName);
+            });
+        });
+        
+        // خروجی اکسل گزارش
+        document.getElementById('export-report-btn').addEventListener('click', function() {
+            const reportData = {
+                'تعداد سیم‌کارت‌های فروخته شده': simData.filter(sim => sim.customer && sim.customer !== '').length,
+                'مقدار کریدت ارسالی': creditData.filter(credit => credit.type === 'send').reduce((sum, credit) => sum + credit.amount, 0),
+                'مقدار کریدت قرضی': creditData.filter(credit => credit.type === 'loan').reduce((sum, credit) => sum + credit.amount, 0),
+                'مشتریان جدید': customerData.length,
+                'کل درآمد': transactionData.filter(t => t.receiver === 'سیستم').reduce((sum, t) => sum + t.amount, 0),
+                'تاریخ گزارش': document.getElementById('report-date').value,
+                'نوع گزارش': document.getElementById('report-type').options[document.getElementById('report-type').selectedIndex].text
+            };
+            
+            const ws = XLSX.utils.json_to_sheet([reportData]);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'گزارش');
+            XLSX.writeFile(wb, `گزارش_سیستم_${getTodayDate()}.xlsx`);
+            alert('گزارش با فرمت اکسل ذخیره شد.');
+        });
+        
+        // مدیریت انواع
+        document.getElementById('manage-types-btn').addEventListener('click', function() {
+            // اسکرول به بخش مدیریت انواع
+            document.querySelector('.manage-types-section').scrollIntoView({ behavior: 'smooth' });
+        });
+        
+        // اضافه کردن انواع جدید
+        document.getElementById('add-sim-type-btn').addEventListener('click', function() {
+            const value = document.getElementById('new-sim-type').value;
+            addNewType('sim', value);
+            document.getElementById('new-sim-type').value = '';
+        });
+        
+        document.getElementById('add-sim-status-btn').addEventListener('click', function() {
+            const value = document.getElementById('new-sim-status').value;
+            addNewType('simStatus', value);
+            document.getElementById('new-sim-status').value = '';
+        });
+        
+        document.getElementById('add-transaction-type-btn').addEventListener('click', function() {
+            const value = document.getElementById('new-transaction-type').value;
+            addNewType('transaction', value);
+            document.getElementById('new-transaction-type').value = '';
+        });
+        
+        document.getElementById('add-transaction-status-btn').addEventListener('click', function() {
+            const value = document.getElementById('new-transaction-status').value;
+            addNewType('transactionStatus', value);
+            document.getElementById('new-transaction-status').value = '';
+        });
+        
+        // اجازه Enter برای اضافه کردن انواع
+        document.querySelectorAll('.type-input-group input').forEach(input => {
+            input.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const btn = this.parentElement.querySelector('button');
+                    btn.click();
+                }
+            });
+        });
+        
+        // تابع کمکی برای تاریخ امروز
+        function getTodayDate() {
+            const today = new Date();
+            const year = today.getFullYear() - 621; // تبدیل به هجری شمسی (تقریبی)
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+        
+        // نمایش تاریخ جاری
+        function displayCurrentDate() {
+            const today = new Date();
+            const options = { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric',
+                weekday: 'long'
+            };
+            const persianDate = today.toLocaleDateString('fa-IR', options);
+            document.getElementById('current-date').textContent = persianDate;
+        }
+        
+        // تنظیم تاریخ امروز
+        function setTodayDate() {
+            const todayDate = getTodayDate();
+            
+            document.getElementById('report-date').value = todayDate;
+            document.getElementById('sim-activation-date').value = todayDate;
+            document.getElementById('credit-date').value = todayDate;
+            
+            // تنظیم تاریخ سررسید (یک ماه بعد)
+            const nextMonth = new Date();
+            nextMonth.setMonth(nextMonth.getMonth() + 1);
+            const dueYear = nextMonth.getFullYear() - 621;
+            const dueMonth = String(nextMonth.getMonth() + 1).padStart(2, '0');
+            const dueDay = String(nextMonth.getDate()).padStart(2, '0');
+            const dueDate = `${dueYear}-${dueMonth}-${dueDay}`;
+            
+            document.getElementById('loan-due-date').value = dueDate;
+        }
+        
+        // بارگذاری اولیه
+        document.addEventListener('DOMContentLoaded', function() {
+            renderSimTable();
+            renderCustomerTable();
+            renderCreditTable();
+            renderTransactionTable();
+            renderManageableTypes();
+            updateDashboard();
+            setTodayDate();
+            displayCurrentDate();
+            
+            console.log('سیستم مدیریت سیم کارت‌های روشن و کریدت - نسخه پیشرفته با موفقیت بارگذاری شد.');
+            console.log('ویژگی‌ها: مدیریت انواع، پرینت، خروجی اکسل');
+            console.log('تغییرات: فیلدهای نوع سیم، وضعیت و مشتری در فرم سیم کارت به input text تبدیل شدند');
+        });
+    </script>
+</body>
+</html>
