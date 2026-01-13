@@ -869,34 +869,6 @@
             to { transform: rotate(360deg); }
         }
         
-        /* تعیین نحوه ذخیره سازی */
-        .storage-mode-selector {
-            position: absolute;
-            top: 15px;
-            left: 15px;
-            z-index: 1000;
-        }
-        
-        .storage-btn {
-            background: rgba(255, 255, 255, 0.9);
-            border: 2px solid var(--roshan-red);
-            border-radius: 20px;
-            padding: 8px 14px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            transition: var(--transition);
-            white-space: nowrap;
-        }
-        
-        .storage-btn:hover {
-            background: var(--roshan-red);
-            color: white;
-        }
-        
         /* منوی همبرگری برای موبایل */
         .mobile-menu-toggle {
             display: none;
@@ -1004,21 +976,6 @@
             /* تنظیمات خاص موبایل */
             body {
                 font-size: 14px;
-            }
-            
-            .storage-mode-selector {
-                position: relative;
-                top: 0;
-                left: 0;
-                margin-bottom: 15px;
-                text-align: center;
-            }
-            
-            .storage-btn {
-                margin: 0 auto;
-                justify-content: center;
-                width: 100%;
-                max-width: 300px;
             }
             
             .tabs {
@@ -1169,8 +1126,6 @@
                 font-size: 0.75rem;
             }
         }
-        
-        /* حذف zoom: 0.9 از body */
     </style>
 </head>
 <body>
@@ -1178,14 +1133,6 @@
     <button class="mobile-menu-toggle" id="mobile-menu-toggle">
         <i class="fas fa-bars"></i>
     </button>
-    
-    <!-- تعیین نحوه ذخیره سازی -->
-    <div class="storage-mode-selector">
-        <button class="storage-btn" id="toggle-storage-mode">
-            <i class="fas fa-database"></i>
-            <span id="storage-mode-text">ذخیره‌سازی ابری</span>
-        </button>
-    </div>
     
     <!-- نوتیفیکیشن -->
     <div class="notification" id="notification"></div>
@@ -1218,7 +1165,7 @@
                 <div class="toolbar-group">
                     <span class="toolbar-label">وضعیت ذخیره‌سازی: </span>
                     <span id="connection-status" style="color: var(--success);">
-                        <i class="fas fa-database"></i> <span class="status-text">ذخیره‌سازی محلی</span>
+                        <i class="fas fa-cloud"></i> <span class="status-text">ذخیره‌سازی ابری</span>
                     </span>
                 </div>
             </div>
@@ -1859,14 +1806,13 @@
     
     <footer class="no-print">
         <p>سیستم مدیریت سیم کارت‌های روشن و کریدت &copy; ۱۴۰۲</p>
-        <p id="footer-storage-info">اپراتور: روشن افغانستان | ذخیره‌سازی: محلی</p>
+        <p id="footer-storage-info">اپراتور: روشن افغانستان | ذخیره‌سازی: ابری (Supabase)</p>
     </footer>
     
     <script>
         // ==================== پیکربندی سیستم ====================
         
-        // تنظیمات سیستم
-        let useSupabase = false; // حالت پیش‌فرض: Local Storage
+        // Supabase Client
         let supabase = null;
         
         // متغیرهای داده
@@ -1958,77 +1904,6 @@
             document.getElementById('loan-due-date').value = getNextMonthDate();
         }
         
-        // ==================== توابع ذخیره‌سازی Local Storage ====================
-        
-        // بارگذاری همه داده‌ها از Local Storage
-        function loadFromLocalStorage() {
-            showLoading('در حال بارگذاری داده‌ها از حافظه محلی...');
-            
-            try {
-                // بارگذاری داده‌ها
-                simData = JSON.parse(localStorage.getItem('simData')) || [];
-                customerData = JSON.parse(localStorage.getItem('customerData')) || [];
-                creditData = JSON.parse(localStorage.getItem('creditData')) || [];
-                transactionData = JSON.parse(localStorage.getItem('transactionData')) || [];
-                
-                // بارگذاری انواع
-                const storedTypes = JSON.parse(localStorage.getItem('types')) || {};
-                simTypes = storedTypes.simTypes || simTypes;
-                simStatuses = storedTypes.simStatuses || simStatuses;
-                transactionTypes = storedTypes.transactionTypes || transactionTypes;
-                transactionStatuses = storedTypes.transactionStatuses || transactionStatuses;
-                
-                // رندر جداول و آپدیت داشبورد
-                renderAllTables();
-                updateDashboard();
-                renderManageableTypes();
-                populateSimDropdown();
-                populateFormDropdowns();
-                
-                hideLoading();
-                showNotification('داده‌ها با موفقیت بارگذاری شدند', 'success');
-                
-                console.log('داده‌ها از Local Storage بارگذاری شدند:', {
-                    sims: simData.length,
-                    customers: customerData.length,
-                    credits: creditData.length,
-                    transactions: transactionData.length
-                });
-                
-            } catch (error) {
-                console.error('خطا در بارگذاری از Local Storage:', error);
-                hideLoading();
-                showNotification('خطا در بارگذاری داده‌ها', 'error');
-                
-                // اگر خطا بود، داده‌های نمونه بارگذاری شود
-                loadSampleData();
-            }
-        }
-        
-        // ذخیره همه داده‌ها در Local Storage
-        function saveToLocalStorage() {
-            try {
-                localStorage.setItem('simData', JSON.stringify(simData));
-                localStorage.setItem('customerData', JSON.stringify(customerData));
-                localStorage.setItem('creditData', JSON.stringify(creditData));
-                localStorage.setItem('transactionData', JSON.stringify(transactionData));
-                
-                // ذخیره انواع
-                const types = {
-                    simTypes,
-                    simStatuses,
-                    transactionTypes,
-                    transactionStatuses
-                };
-                localStorage.setItem('types', JSON.stringify(types));
-                
-                return true;
-            } catch (error) {
-                console.error('خطا در ذخیره در Local Storage:', error);
-                return false;
-            }
-        }
-        
         // ==================== توابع Supabase ====================
         
         // راه‌اندازی Supabase
@@ -2094,9 +1969,6 @@
                     });
                 }
                 
-                // ذخیره در Local Storage به عنوان کش
-                saveToLocalStorage();
-                
                 // رندر جداول و آپدیت داشبورد
                 renderAllTables();
                 updateDashboard();
@@ -2120,12 +1992,6 @@
                 console.error('خطا در بارگذاری از Supabase:', error);
                 hideLoading();
                 showNotification(`خطا در بارگذاری از ابر: ${error.message}`, 'error');
-                
-                // اگر خطا در بارگذاری از ابر داشتیم، از Local Storage بارگذاری کنیم
-                if (localStorage.getItem('simData')) {
-                    showNotification('بارگذاری از حافظه محلی به دلیل مشکل اتصال', 'warning');
-                    loadFromLocalStorage();
-                }
                 return false;
             }
         }
@@ -2143,39 +2009,22 @@
                 }
                 
                 // ذخیره در Supabase
-                if (useSupabase && supabase) {
-                    const { data, error } = await supabase
-                        .from('sim_cards')
-                        .upsert([simDataToSave])
-                        .select();
-                    
-                    if (error) throw error;
-                    
-                    // ذخیره در آرایه محلی
-                    if (simDataToSave.id) {
-                        const index = simData.findIndex(s => s.id === simDataToSave.id);
-                        if (index !== -1) {
-                            simData[index] = data[0];
-                        }
-                    } else {
-                        simData.unshift(data[0]);
+                const { data, error } = await supabase
+                    .from('sim_cards')
+                    .upsert([simDataToSave])
+                    .select();
+                
+                if (error) throw error;
+                
+                // ذخیره در آرایه محلی
+                if (simDataToSave.id) {
+                    const index = simData.findIndex(s => s.id === simDataToSave.id);
+                    if (index !== -1) {
+                        simData[index] = data[0];
                     }
                 } else {
-                    // ذخیره در Local Storage
-                    if (simDataToSave.id) {
-                        const index = simData.findIndex(s => s.id === simDataToSave.id);
-                        if (index !== -1) {
-                            simData[index] = simDataToSave;
-                        }
-                    } else {
-                        const newId = Date.now();
-                        simDataToSave.id = newId;
-                        simData.unshift(simDataToSave);
-                    }
+                    simData.unshift(data[0]);
                 }
-                
-                // همیشه در Local Storage ذخیره کن
-                saveToLocalStorage();
                 
                 // رندر مجدد جداول
                 renderSimTable();
@@ -2207,39 +2056,22 @@
                 }
                 
                 // ذخیره در Supabase
-                if (useSupabase && supabase) {
-                    const { data, error } = await supabase
-                        .from('customers')
-                        .upsert([customerDataToSave])
-                        .select();
-                    
-                    if (error) throw error;
-                    
-                    // ذخیره در آرایه محلی
-                    if (customerDataToSave.id) {
-                        const index = customerData.findIndex(c => c.id === customerDataToSave.id);
-                        if (index !== -1) {
-                            customerData[index] = data[0];
-                        }
-                    } else {
-                        customerData.unshift(data[0]);
+                const { data, error } = await supabase
+                    .from('customers')
+                    .upsert([customerDataToSave])
+                    .select();
+                
+                if (error) throw error;
+                
+                // ذخیره در آرایه محلی
+                if (customerDataToSave.id) {
+                    const index = customerData.findIndex(c => c.id === customerDataToSave.id);
+                    if (index !== -1) {
+                        customerData[index] = data[0];
                     }
                 } else {
-                    // ذخیره در Local Storage
-                    if (customerDataToSave.id) {
-                        const index = customerData.findIndex(c => c.id === customerDataToSave.id);
-                        if (index !== -1) {
-                            customerData[index] = customerDataToSave;
-                        }
-                    } else {
-                        const newId = Date.now();
-                        customerDataToSave.id = newId;
-                        customerData.unshift(customerDataToSave);
-                    }
+                    customerData.unshift(data[0]);
                 }
-                
-                // همیشه در Local Storage ذخیره کن
-                saveToLocalStorage();
                 
                 // رندر مجدد جداول
                 renderCustomerTable();
@@ -2269,39 +2101,22 @@
                 }
                 
                 // ذخیره در Supabase
-                if (useSupabase && supabase) {
-                    const { data, error } = await supabase
-                        .from('credits')
-                        .upsert([creditDataToSave])
-                        .select();
-                    
-                    if (error) throw error;
-                    
-                    // ذخیره در آرایه محلی
-                    if (creditDataToSave.id) {
-                        const index = creditData.findIndex(c => c.id === creditDataToSave.id);
-                        if (index !== -1) {
-                            creditData[index] = data[0];
-                        }
-                    } else {
-                        creditData.unshift(data[0]);
+                const { data, error } = await supabase
+                    .from('credits')
+                    .upsert([creditDataToSave])
+                    .select();
+                
+                if (error) throw error;
+                
+                // ذخیره در آرایه محلی
+                if (creditDataToSave.id) {
+                    const index = creditData.findIndex(c => c.id === creditDataToSave.id);
+                    if (index !== -1) {
+                        creditData[index] = data[0];
                     }
                 } else {
-                    // ذخیره در Local Storage
-                    if (creditDataToSave.id) {
-                        const index = creditData.findIndex(c => c.id === creditDataToSave.id);
-                        if (index !== -1) {
-                            creditData[index] = creditDataToSave;
-                        }
-                    } else {
-                        const newId = Date.now();
-                        creditDataToSave.id = newId;
-                        creditData.unshift(creditDataToSave);
-                    }
+                    creditData.unshift(data[0]);
                 }
-                
-                // همیشه در Local Storage ذخیره کن
-                saveToLocalStorage();
                 
                 // ثبت تراکنش مرتبط
                 const transactionDataToSave = {
@@ -2341,24 +2156,14 @@
                 transactionDataToSave.created_at = new Date().toISOString();
                 
                 // ذخیره در Supabase
-                if (useSupabase && supabase) {
-                    const { data, error } = await supabase
-                        .from('transactions')
-                        .insert([transactionDataToSave])
-                        .select();
-                    
-                    if (error) throw error;
-                    
-                    transactionData.unshift(data[0]);
-                } else {
-                    // ذخیره در Local Storage
-                    const newId = Date.now();
-                    transactionDataToSave.id = newId;
-                    transactionData.unshift(transactionDataToSave);
-                }
+                const { data, error } = await supabase
+                    .from('transactions')
+                    .insert([transactionDataToSave])
+                    .select();
                 
-                // همیشه در Local Storage ذخیره کن
-                saveToLocalStorage();
+                if (error) throw error;
+                
+                transactionData.unshift(data[0]);
                 
                 return true;
                 
@@ -2376,23 +2181,18 @@
                 showLoading('در حال حذف سیم کارت...');
                 
                 // حذف از Supabase
-                if (useSupabase && supabase) {
-                    const { error } = await supabase
-                        .from('sim_cards')
-                        .delete()
-                        .eq('id', id);
-                    
-                    if (error) throw error;
-                }
+                const { error } = await supabase
+                    .from('sim_cards')
+                    .delete()
+                    .eq('id', id);
+                
+                if (error) throw error;
                 
                 // حذف از آرایه محلی
                 const index = simData.findIndex(s => s.id == id);
                 if (index !== -1) {
                     simData.splice(index, 1);
                 }
-                
-                // همیشه در Local Storage ذخیره کن
-                saveToLocalStorage();
                 
                 // رندر مجدد جداول
                 renderSimTable();
@@ -2420,23 +2220,18 @@
                 showLoading('در حال حذف مشتری...');
                 
                 // حذف از Supabase
-                if (useSupabase && supabase) {
-                    const { error } = await supabase
-                        .from('customers')
-                        .delete()
-                        .eq('id', id);
-                    
-                    if (error) throw error;
-                }
+                const { error } = await supabase
+                    .from('customers')
+                    .delete()
+                    .eq('id', id);
+                
+                if (error) throw error;
                 
                 // حذف از آرایه محلی
                 const index = customerData.findIndex(c => c.id == id);
                 if (index !== -1) {
                     customerData.splice(index, 1);
                 }
-                
-                // همیشه در Local Storage ذخیره کن
-                saveToLocalStorage();
                 
                 // رندر مجدد جداول
                 renderCustomerTable();
@@ -2463,23 +2258,18 @@
                 showLoading('در حال حذف کریدت...');
                 
                 // حذف از Supabase
-                if (useSupabase && supabase) {
-                    const { error } = await supabase
-                        .from('credits')
-                        .delete()
-                        .eq('id', id);
-                    
-                    if (error) throw error;
-                }
+                const { error } = await supabase
+                    .from('credits')
+                    .delete()
+                    .eq('id', id);
+                
+                if (error) throw error;
                 
                 // حذف از آرایه محلی
                 const index = creditData.findIndex(c => c.id == id);
                 if (index !== -1) {
                     creditData.splice(index, 1);
                 }
-                
-                // همیشه در Local Storage ذخیره کن
-                saveToLocalStorage();
                 
                 // رندر مجدد جداول
                 renderCreditTable();
@@ -2500,8 +2290,6 @@
         
         // ذخیره انواع در Supabase
         async function saveTypesToSupabase() {
-            if (!useSupabase || !supabase) return false;
-            
             try {
                 const settingsToSave = [
                     { key: 'simTypes', value: JSON.stringify(simTypes) },
@@ -2725,12 +2513,7 @@
                     }
                     
                     // ذخیره
-                    if (useSupabase) {
-                        await saveTypesToSupabase();
-                    }
-                    
-                    // همیشه در Local Storage ذخیره کن
-                    saveToLocalStorage();
+                    await saveTypesToSupabase();
                     
                     renderManageableTypes();
                     populateFormDropdowns();
@@ -2782,12 +2565,7 @@
                 }
                 
                 // ذخیره
-                if (useSupabase) {
-                    await saveTypesToSupabase();
-                }
-                
-                // همیشه در Local Storage ذخیره کن
-                saveToLocalStorage();
+                await saveTypesToSupabase();
                 
                 renderManageableTypes();
                 populateFormDropdowns();
@@ -3043,101 +2821,81 @@
         // ==================== توابع عملیاتی ====================
         
         // بارگذاری داده‌های نمونه
-        function loadSampleData() {
-            // داده‌های نمونه سیم‌کارت
-            if (simData.length === 0) {
-                simData = [
+        async function loadSampleData() {
+            showLoading('در حال بارگذاری داده‌های نمونه...');
+            
+            try {
+                // داده‌های نمونه سیم‌کارت
+                const sampleSims = [
                     {
-                        id: 1,
                         number: "0799 123 4567",
                         type: "پیش‌پرداخت",
                         customer: "احمد حسینی",
                         price: 500,
                         status: "فعال",
                         activation_date: getTodayDate(),
-                        description: "سیم کارت پیش‌پرداخت",
-                        created_at: new Date().toISOString()
+                        description: "سیم کارت پیش‌پرداخت"
                     },
                     {
-                        id: 2,
                         number: "0700 987 6543",
                         type: "پس‌پرداخت",
                         customer: "محمد احمدزی",
                         price: 1000,
                         status: "فعال",
                         activation_date: getTodayDate(),
-                        description: "سیم کارت پس‌پرداخت",
-                        created_at: new Date().toISOString()
+                        description: "سیم کارت پس‌پرداخت"
                     },
                     {
-                        id: 3,
                         number: "0777 555 1234",
                         type: "دیتا",
                         customer: "فاطمه محمدی",
                         price: 800,
                         status: "فعال",
                         activation_date: getTodayDate(),
-                        description: "سیم کارت دیتا",
-                        created_at: new Date().toISOString()
+                        description: "سیم کارت دیتا"
                     }
                 ];
-            }
-            
-            // داده‌های نمونه مشتریان
-            if (customerData.length === 0) {
-                customerData = [
+                
+                // داده‌های نمونه مشتریان
+                const sampleCustomers = [
                     {
-                        id: 1,
                         code: "CUST-001",
                         name: "احمد حسینی",
                         tazkira: "کابل-۱۲۳۴۵۶۷",
                         phone: "07991234567",
-                        sim_id: 1,
                         address: "کابل، کارته سخی",
-                        reg_date: getTodayDate(),
-                        created_at: new Date().toISOString()
+                        reg_date: getTodayDate()
                     },
                     {
-                        id: 2,
                         code: "CUST-002",
                         name: "محمد احمدزی",
                         tazkira: "قندهار-۷۸۹۰۱۲۳",
                         phone: "07009876543",
-                        sim_id: 2,
                         address: "قندهار، سرآسیاب",
-                        reg_date: getTodayDate(),
-                        created_at: new Date().toISOString()
+                        reg_date: getTodayDate()
                     },
                     {
-                        id: 3,
                         code: "CUST-003",
                         name: "فاطمه محمدی",
                         tazkira: "هرات-۴۵۶۷۸۹۰",
                         phone: "07775551234",
-                        sim_id: 3,
                         address: "هرات، پل مالان",
-                        reg_date: getTodayDate(),
-                        created_at: new Date().toISOString()
+                        reg_date: getTodayDate()
                     }
                 ];
-            }
-            
-            // داده‌های نمونه کریدت
-            if (creditData.length === 0) {
-                creditData = [
+                
+                // داده‌های نمونه کریدت
+                const sampleCredits = [
                     {
-                        id: 1,
                         type: "send",
                         customer_name: "احمد حسینی",
                         customer_phone: "07991234567",
                         amount: 5000,
                         date: getTodayDate(),
                         status: "completed",
-                        description: "کریدت برای خرید سیم کارت",
-                        created_at: new Date().toISOString()
+                        description: "کریدت برای خرید سیم کارت"
                     },
                     {
-                        id: 2,
                         type: "loan",
                         customer_name: "محمد احمدزی",
                         customer_phone: "07009876543",
@@ -3145,49 +2903,34 @@
                         date: getTodayDate(),
                         status: "pending",
                         description: "قرض برای کسب و کار",
-                        due_date: getNextMonthDate(),
-                        created_at: new Date().toISOString()
+                        due_date: getNextMonthDate()
                     }
                 ];
+                
+                // ذخیره داده‌های نمونه
+                for (const sim of sampleSims) {
+                    await saveSim(sim);
+                }
+                
+                for (const customer of sampleCustomers) {
+                    await saveCustomer(customer);
+                }
+                
+                for (const credit of sampleCredits) {
+                    await saveCredit(credit);
+                }
+                
+                // ذخیره تنظیمات
+                await saveTypesToSupabase();
+                
+                hideLoading();
+                showNotification('داده‌های نمونه با موفقیت بارگذاری شدند', 'success');
+                
+            } catch (error) {
+                hideLoading();
+                showNotification('خطا در بارگذاری داده‌های نمونه', 'error');
+                console.error(error);
             }
-            
-            // داده‌های نمونه تراکنش‌ها
-            if (transactionData.length === 0) {
-                transactionData = [
-                    {
-                        id: 1,
-                        type: "sim_purchase",
-                        sender: "سیستم",
-                        receiver: "احمد حسینی",
-                        amount: 500,
-                        date: getTodayDate(),
-                        status: "completed",
-                        description: "خرید سیم کارت",
-                        created_at: new Date().toISOString()
-                    },
-                    {
-                        id: 2,
-                        type: "credit_send",
-                        sender: "سیستم",
-                        receiver: "محمد احمدزی",
-                        amount: 10000,
-                        date: getTodayDate(),
-                        status: "pending",
-                        description: "کریدت قرضی",
-                        created_at: new Date().toISOString()
-                    }
-                ];
-            }
-            
-            // ذخیره در Local Storage
-            saveToLocalStorage();
-            
-            // رندر جداول
-            renderAllTables();
-            updateDashboard();
-            renderManageableTypes();
-            populateSimDropdown();
-            populateFormDropdowns();
         }
         
         // افزودن سیم جدید
@@ -3654,11 +3397,7 @@
         
         // بارگذاری مجدد داده‌ها
         document.getElementById('refresh-data-btn').addEventListener('click', function() {
-            if (useSupabase) {
-                loadFromSupabase();
-            } else {
-                loadFromLocalStorage();
-            }
+            loadFromSupabase();
         });
         
         // خروجی اکسل
@@ -3865,77 +3604,6 @@
             });
         });
         
-        // تغییر حالت ذخیره‌سازی
-        document.getElementById('toggle-storage-mode').addEventListener('click', async function() {
-            useSupabase = !useSupabase;
-            
-            if (useSupabase) {
-                // تغییر به Supabase
-                const success = await setupSupabase();
-                if (success) {
-                    updateStorageUI();
-                    showNotification('در حال تغییر به ذخیره‌سازی ابری...', 'info');
-                    
-                    // بارگذاری از Supabase
-                    const loadSuccess = await loadFromSupabase();
-                    if (!loadSuccess) {
-                        // اگر خطا داشت، به حالت Local برگرد
-                        useSupabase = false;
-                        updateStorageUI();
-                    }
-                } else {
-                    useSupabase = false;
-                    showNotification('خطا در اتصال به ابر. استفاده از ذخیره‌سازی محلی.', 'error');
-                }
-            } else {
-                // تغییر به Local Storage
-                updateStorageUI();
-                showNotification('تغییر به ذخیره‌سازی محلی', 'info');
-                loadFromLocalStorage();
-            }
-        });
-        
-        // به‌روزرسانی UI بر اساس حالت ذخیره‌سازی
-        function updateStorageUI() {
-            if (useSupabase) {
-                document.getElementById('storage-mode-text').textContent = 'ذخیره‌سازی ابری';
-                document.getElementById('storage-info').textContent = 'مدیریت کامل سیم کارت‌های اپراتور روشن و ثبت کریدت‌های ارسالی و قرضی با ذخیره‌سازی ابری در Supabase';
-                document.getElementById('footer-storage-info').textContent = 'اپراتور: روشن افغانستان | ذخیره‌سازی: ابری (Supabase)';
-                
-                const statusElement = document.getElementById('connection-status');
-                statusElement.innerHTML = '<i class="fas fa-cloud"></i> <span class="status-text">متصل به Supabase</span>';
-                statusElement.style.color = 'var(--success)';
-            } else {
-                document.getElementById('storage-mode-text').textContent = 'ذخیره‌سازی محلی';
-                document.getElementById('storage-info').textContent = 'مدیریت کامل سیم کارت‌های اپراتور روشن و ثبت کریدت‌های ارسالی و قرضی با ذخیره‌سازی محلی در مرورگر';
-                document.getElementById('footer-storage-info').textContent = 'اپراتور: روشن افغانستان | ذخیره‌سازی: محلی';
-                
-                const statusElement = document.getElementById('connection-status');
-                statusElement.innerHTML = '<i class="fas fa-database"></i> <span class="status-text">ذخیره‌سازی محلی</span>';
-                statusElement.style.color = 'var(--info)';
-            }
-            
-            // به‌روزرسانی متن دکمه‌ها برای موبایل
-            const isMobile = window.innerWidth < 768;
-            if (isMobile) {
-                // مخفی کردن متن دکمه‌ها در موبایل
-                document.querySelectorAll('.btn-text').forEach(el => {
-                    el.style.display = 'none';
-                });
-                document.querySelectorAll('.status-text').forEach(el => {
-                    el.style.display = 'inline';
-                });
-            } else {
-                // نمایش متن دکمه‌ها در دسکتاپ
-                document.querySelectorAll('.btn-text').forEach(el => {
-                    el.style.display = 'inline';
-                });
-                document.querySelectorAll('.status-text').forEach(el => {
-                    el.style.display = 'inline';
-                });
-            }
-        }
-        
         // ==================== بارگذاری اولیه ====================
         
         document.addEventListener('DOMContentLoaded', async function() {
@@ -3943,22 +3611,47 @@
             displayCurrentDate();
             setTodayDate();
             
-            // تنظیم اولیه UI
-            updateStorageUI();
-            
-            // بارگذاری داده‌ها
-            loadFromLocalStorage();
-            
-            // اگر داده‌ای نبود، نمونه‌ها را بارگذاری کن
-            if (simData.length === 0 && customerData.length === 0) {
-                loadSampleData();
-                showNotification('سیستم با داده‌های نمونه راه‌اندازی شد. شما می‌توانید داده‌های خود را اضافه کنید.', 'info');
+            // راه‌اندازی Supabase و بارگذاری داده‌ها
+            const success = await setupSupabase();
+            if (success) {
+                await loadFromSupabase();
+                
+                // اگر داده‌ای نبود، نمونه‌ها را بارگذاری کن
+                if (simData.length === 0 && customerData.length === 0) {
+                    const loadSample = confirm('داده‌ای در سیستم یافت نشد. آیا می‌خواهید داده‌های نمونه بارگذاری شوند؟');
+                    if (loadSample) {
+                        await loadSampleData();
+                    }
+                }
+            } else {
+                showNotification('خطا در اتصال به پایگاه داده ابری. لطفا اتصال اینترنت خود را بررسی کنید.', 'error');
             }
             
             // رویداد resize برای به‌روزرسانی UI بر اساس اندازه صفحه
             window.addEventListener('resize', function() {
-                updateStorageUI();
+                // به‌روزرسانی متن دکمه‌ها برای موبایل
+                const isMobile = window.innerWidth < 768;
+                if (isMobile) {
+                    // مخفی کردن متن دکمه‌ها در موبایل
+                    document.querySelectorAll('.btn-text').forEach(el => {
+                        el.style.display = 'none';
+                    });
+                    document.querySelectorAll('.status-text').forEach(el => {
+                        el.style.display = 'inline';
+                    });
+                } else {
+                    // نمایش متن دکمه‌ها در دسکتاپ
+                    document.querySelectorAll('.btn-text').forEach(el => {
+                        el.style.display = 'inline';
+                    });
+                    document.querySelectorAll('.status-text').forEach(el => {
+                        el.style.display = 'inline';
+                    });
+                }
             });
+            
+            // فراخوانی اولیه برای تنظیم وضعیت
+            window.dispatchEvent(new Event('resize'));
         });
     </script>
 </body>
